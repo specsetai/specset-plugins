@@ -1,0 +1,9 @@
+{
+  "name": "specset",
+  "description": "Drive Specbook AI via the specset CLI — authenticate, run GraphQL queries, and chat with Specbook project agents. Installs the CLI on first use.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Specbook AI"
+  },
+  "homepage": "https://specbook.ai"
+}
