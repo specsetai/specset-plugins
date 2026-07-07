@@ -1,12 +1,12 @@
 ---
 name: specset
-description: Core CLI for Specbook AI — install, authenticate, switch organizations, and run GraphQL with `specset api`. Start here for any Specbook/Specset task, and whenever a specset command fails with auth or org errors.
+description: Core CLI for Specset — install, authenticate, switch organizations, and run GraphQL with `specset api`. Start here for any Specset task, and whenever a specset command fails with auth or org errors.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
-# Specbook CLI (`specset`)
+# Specset CLI (`specset`)
 
-Use this skill to work with a Specbook AI organization from the command line: run GraphQL queries against your data (projects, drawings, specs, submittals, …) and manage authentication and org context.
+Use this skill to work with a Specset organization from the command line: run GraphQL queries against your data (projects, drawings, specs, submittals, …) and manage authentication and org context.
 
 The `specset` CLI handles OAuth login, org switching, and request signing. The exact flag surface of the installed version is authoritative in its own help output — prefer `specset --help` and `specset <command> --help` over memorized flags when something doesn't match this document.
 
@@ -21,14 +21,14 @@ This is the core skill — setup and mechanics only. Domain workflows live in si
 | `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews |
 | `specset-rfis` | RFI logging, tracking, and responses |
 | `specset-closeout` | Assets, locations, products, companies, warranties, and maintenance |
-| `specset-agent` | Delegating deep project questions to Specbook's in-app AI agent |
+| `specset-agent` | Delegating deep project questions to Specset's in-app AI agent |
 | `specset-admin` | Org members, invites, and whitelabel branding |
 
 `specset skill install` installs and updates the whole family (`specset skill list` shows what's bundled) — if a skill named above is missing from your skills directory, run it.
 
 ## First-Run Setup
 
-Perform this setup yourself when the user asks to get started with Specbook (or when a command fails because the CLI is missing or unauthenticated). Every step is idempotent — skip any that's already satisfied.
+Perform this setup yourself when the user asks to get started with Specset (or when a command fails because the CLI is missing or unauthenticated). Every step is idempotent — skip any that's already satisfied.
 
 1. Ensure the CLI is installed:
 
@@ -167,5 +167,5 @@ Processing large PDF sets takes minutes; poll every 15–30 seconds and tell the
 - `Not logged in` — run `specset login` (opens the user's browser; tell them to complete sign-in there).
 - `No active organization selected` — run `specset org list`, then `specset org use <slug>`.
 - A lookup by id returns `null` without an error — the record usually belongs to a different org than the active one; check `specset auth status` and switch with `specset org use <slug>`.
-- Login requires a browser; on a headless machine, run the CLI from a machine with a browser first, or contact Specbook support about headless options.
+- Login requires a browser; on a headless machine, run the CLI from a machine with a browser first, or contact Specset support about headless options.
 - After upgrading the CLI (`npm i -g @specset/cli@latest`), refresh the skills with `specset skill install`.

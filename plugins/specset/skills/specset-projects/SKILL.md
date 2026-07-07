@@ -1,10 +1,10 @@
 ---
 name: specset-projects
-description: Use when standing up a new Specbook project or adding document sets to one — create the project, upload spec/drawing PDFs, monitor processing, and publish spec sets and drawing sets.
+description: Use when standing up a new Specset project or adding document sets to one — create the project, upload spec/drawing PDFs, monitor processing, and publish spec sets and drawing sets.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
-# Specbook Projects
+# Specset Projects
 
 Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
 

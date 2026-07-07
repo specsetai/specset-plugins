@@ -1,6 +1,6 @@
 ---
 name: specset-closeout
-description: Use when managing Specbook closeout and facilities data — assets, locations, products, companies, warranties, and maintenance tasks, plus their documents and links — for closeout package or O&M/facilities tasks.
+description: Use when managing Specset closeout and facilities data — assets, locations, products, companies, warranties, and maintenance tasks, plus their documents and links — for closeout package or O&M/facilities tasks.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 

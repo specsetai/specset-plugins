@@ -1,10 +1,10 @@
 ---
 name: specset-search
-description: Use when the user asks to find, look up, or locate anything in their Specbook projects — semantic and keyword search across specs, drawing sheets, submittals, RFIs, documents, and closeout records.
+description: Use when the user asks to find, look up, or locate anything in their Specset projects — semantic and keyword search across specs, drawing sheets, submittals, RFIs, documents, and closeout records.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
-# Specbook Search
+# Specset Search
 
 Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
 
@@ -126,6 +126,6 @@ specset api --query 'query($projectId: ID!, $n: String!) {
 
 ## Working With Results
 
-- Each result's `url` is a Specbook reference URL — `sb://spec/<id>`, `sb://drawing/<id>`, `sb://sub/<id>`, `sb://rfi/<id>`, `sb://doc/<id>`, and so on. The UUID inside is the record's GraphQL `id`; extract it for follow-up queries on that record.
+- Each result's `url` is a Specset reference URL — `sb://spec/<id>`, `sb://drawing/<id>`, `sb://sub/<id>`, `sb://rfi/<id>`, `sb://doc/<id>`, and so on. The UUID inside is the record's GraphQL `id`; extract it for follow-up queries on that record.
 - Lookups by id are scoped to the **active org**: an id from a different org returns `null` rather than an error. If a known-good id comes back null, check `specset auth status` and switch orgs.
 - For follow-up work on what you found — updating submittals, answering RFIs, closeout records, or project/document changes — hand off to the `specset-submittals`, `specset-rfis`, `specset-closeout`, or `specset-projects` skill.

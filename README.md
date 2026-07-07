@@ -1,6 +1,6 @@
-# Specbook AI Agent Skills
+# Specset Agent Skills
 
-Teach your AI agent to work with [Specbook AI](https://specbook.ai): search your organization's specs and drawings, set up projects, manage submittals, RFIs, and closeout data, and chat with Specbook's project agents — all from Claude Code, Cursor, Codex, Gemini CLI, or any agent that supports the [Agent Skills](https://agentskills.io) standard.
+Teach your AI agent to work with [Specset](https://specset.com): search your organization's specs and drawings, set up projects, manage submittals, RFIs, and closeout data, and chat with Specset's project agents — all from Claude Code, Cursor, Codex, Gemini CLI, or any agent that supports the [Agent Skills](https://agentskills.io) standard.
 
 The skills are self-bootstrapping: on first use they install the [`@specset/cli`](https://www.npmjs.com/package/@specset/cli) and walk you through signing in.
 
@@ -9,14 +9,14 @@ The skills are self-bootstrapping: on first use they install the [`@specset/cli`
 **Claude Code:**
 
 ```
-/plugin marketplace add specbookai/specset-skill
+/plugin marketplace add specsetai/specset-skill
 /plugin install specset
 ```
 
 **Any other agent** — tell it to fetch and follow the core skill:
 
 ```
-https://raw.githubusercontent.com/specbookai/specset-skill/main/plugins/specset/skills/specset/SKILL.md
+https://raw.githubusercontent.com/specsetai/specset-skill/main/plugins/specset/skills/specset/SKILL.md
 ```
 
 (Or, with the CLI already installed: `specset skill install` copies every skill into `~/.claude/skills`, `specset skill list` shows what's available, and `specset skill print <name>` emits one to stdout.)
@@ -25,7 +25,7 @@ Then just ask your agent a question:
 
 > *"What mechanical equipment is scheduled on level 2 of the Riverside project?"*
 
-The first time, your agent will install the CLI (Node.js 20+ required) and open your browser to sign in to Specbook. After that, it's ready whenever you ask.
+The first time, your agent will install the CLI (Node.js 20+ required) and open your browser to sign in to Specset. After that, it's ready whenever you ask.
 
 ## The skills
 
@@ -39,7 +39,7 @@ The core `specset` skill covers setup, authentication, and running GraphQL. Doma
 | `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews |
 | `specset-rfis` | RFI logging, tracking, and responses |
 | `specset-closeout` | Assets, locations, products, companies, warranties, and maintenance |
-| `specset-agent` | Delegating deep project questions to Specbook's in-app AI agent |
+| `specset-agent` | Delegating deep project questions to Specset's in-app AI agent |
 | `specset-admin` | Org members, invites, and whitelabel branding |
 
 The skills default to read-only operations and ask before anything that changes data. Credentials are managed by the CLI via browser OAuth — the agent never sees or stores them.
@@ -50,4 +50,4 @@ These skills are published in lockstep with `@specset/cli` releases; the plugin 
 
 ## Support
 
-Questions or issues: [https://specbook.ai](https://specbook.ai)
+Questions or issues: [https://specset.com](https://specset.com)

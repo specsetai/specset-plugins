@@ -1,14 +1,14 @@
 ---
 name: specset-agent
-description: Ask Specbook's in-project AI agent questions that need deep project understanding — schedules, spec interpretation, cross-document analysis — via `specset agent chat`. Use when raw GraphQL isn't enough or when unsure how to answer from data.
+description: Ask Specset's in-project AI agent questions that need deep project understanding — schedules, spec interpretation, cross-document analysis — via `specset agent chat`. Use when raw GraphQL isn't enough or when unsure how to answer from data.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
-# Specbook Agent Chat
+# Specset Agent Chat
 
 Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
 
-Specbook runs its own project-aware AI agent with full access to a project's specs, drawings, submittals, RFIs, and closeout data. `specset agent chat` sends it a message and waits for the full response — use it for questions that need Specbook's own project understanding rather than raw data access.
+Specset runs its own project-aware AI agent with full access to a project's specs, drawings, submittals, RFIs, and closeout data. `specset agent chat` sends it a message and waits for the full response — use it for questions that need Specset's own project understanding rather than raw data access.
 
 ## When to Delegate vs. Query Directly
 
@@ -46,5 +46,5 @@ specset api --query 'query { projects { id name } }'
 ## Notes
 
 - Keep one thread per topic: follow-ups via `--thread` give the agent the prior context and produce better answers than fresh threads.
-- The agent may propose changes (creating submittals, updating records) but those are applied through the Specbook UI thread where the user approves them — CLI chat is best treated as read/analysis oriented. To make changes headlessly, use the mutations documented in the domain skills instead.
+- The agent may propose changes (creating submittals, updating records) but those are applied through the Specset UI thread where the user approves them — CLI chat is best treated as read/analysis oriented. To make changes headlessly, use the mutations documented in the domain skills instead.
 - The agent answers from the project you scope it to; double-check the `--project` id when results look unrelated.

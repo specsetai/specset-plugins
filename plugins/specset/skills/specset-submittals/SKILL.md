@@ -1,10 +1,10 @@
 ---
 name: specset-submittals
-description: Manage Specbook submittals — list, search, create, revise, attach files, track approvers, and run AI spec-compliance reviews. Use for any submittal log or submittal review task.
+description: Manage Specset submittals — list, search, create, revise, attach files, track approvers, and run AI spec-compliance reviews. Use for any submittal log or submittal review task.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
-# Specbook Submittals
+# Specset Submittals
 
 Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
 
@@ -63,7 +63,7 @@ mutation {
 GQL
 ```
 
-**From a PDF**: upload it first (see Uploading Files in the `specset` skill) and pass the resulting file id as `cloudFileId` — Specbook extracts the number, title, and section from the document, so you can omit them. Add `autoReviewMode: GeneratePlanAndApprove` to start an AI compliance review in the same call (`GeneratePlan` pauses at the plan for approval; default `None`).
+**From a PDF**: upload it first (see Uploading Files in the `specset` skill) and pass the resulting file id as `cloudFileId` — Specset extracts the number, title, and section from the document, so you can omit them. Add `autoReviewMode: GeneratePlanAndApprove` to start an AI compliance review in the same call (`GeneratePlan` pauses at the plan for approval; default `None`).
 
 Update with `updateSubmittal(input: { id, ... })` — same fields as create, minus `projectId`/`cloudFileId`. Pass only what changes.
 

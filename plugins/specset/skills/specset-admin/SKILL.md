@@ -1,6 +1,6 @@
 ---
 name: specset-admin
-description: Use when administering a Specbook organization — inviting and managing members and roles, or applying whitelabel branding (colors, logos) — for org membership, permissions, or appearance tasks.
+description: Use when administering a Specset organization — inviting and managing members and roles, or applying whitelabel branding (colors, logos) — for org membership, permissions, or appearance tasks.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
@@ -111,6 +111,6 @@ Use `logoId: $fileId` for the square mark. Passing `null` (inline) clears a slot
 
 - Confirm every mutation before running it. For role changes, deactivations, and invite deletions, echo the affected person's email back to the user first — these change real access immediately.
 - Prefer `deactivateOrgMember` over anything destructive; never hard-delete a membership.
-- Never pass `maxCredits` or `skus` to `updateOrg` — those fields are managed by Specbook and the mutation will be rejected.
+- Never pass `maxCredits` or `skus` to `updateOrg` — those fields are managed by Specset and the mutation will be rejected.
 - On `updateOrg`, send only the fields you mean to change (plus the full `appearance` object when changing any part of it).
 - Creating or deleting organizations, SSO, and email-domain management are out of scope for this skill — direct the user to support@specset.com.

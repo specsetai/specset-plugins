@@ -1,10 +1,10 @@
 ---
 name: specset-rfis
-description: Manage Specbook RFIs — list, search, create, update, and record responses including the official answer of record. Use for any RFI logging or tracking task.
+description: Manage Specset RFIs — list, search, create, update, and record responses including the official answer of record. Use for any RFI logging or tracking task.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
-# Specbook RFIs
+# Specset RFIs
 
 Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
 

@@ -1,22 +1,22 @@
 {
   "name": "specset",
   "owner": {
-    "name": "Specbook AI"
+    "name": "Specset"
   },
-  "description": "Official Specbook AI agent skills — work with your Specbook organization from Claude Code and other agents.",
+  "description": "Official Specset agent skills — work with your Specset organization from Claude Code and other agents.",
   "plugins": [
     {
       "name": "specset",
       "source": "./plugins/specset",
-      "description": "Drive Specbook AI via the specset CLI — search specs and drawings, set up projects, manage submittals, RFIs, and closeout data, chat with project agents, and administer your org. Installs the CLI on first use.",
+      "description": "Drive Specset via the specset CLI — search specs and drawings, set up projects, manage submittals, RFIs, and closeout data, chat with project agents, and administer your org. Installs the CLI on first use.",
       "version": "0.2.0",
       "author": {
-        "name": "Specbook AI"
+        "name": "Specset"
       },
-      "homepage": "https://specbook.ai",
-      "repository": "https://github.com/specbookai/specset-skill",
+      "homepage": "https://specset.com",
+      "repository": "https://github.com/specsetai/specset-skill",
       "keywords": [
-        "specbook",
+        "specset",
         "construction",
         "graphql",
         "cli",
