@@ -1,14 +1,30 @@
 ---
 name: specset
-description: Drive Specbook AI headlessly via the specset CLI — authenticate, switch organizations, run GraphQL queries, and chat with Specbook project agents.
+description: Core CLI for Specbook AI — install, authenticate, switch organizations, and run GraphQL with `specset api`. Start here for any Specbook/Specset task, and whenever a specset command fails with auth or org errors.
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
 # Specbook CLI (`specset`)
 
-Use this skill to work with a Specbook AI organization from the command line: run GraphQL queries against your data (projects, drawings, specs, submittals, …) and hold conversations with Specbook's project agents.
+Use this skill to work with a Specbook AI organization from the command line: run GraphQL queries against your data (projects, drawings, specs, submittals, …) and manage authentication and org context.
 
 The `specset` CLI handles OAuth login, org switching, and request signing. The exact flag surface of the installed version is authoritative in its own help output — prefer `specset --help` and `specset <command> --help` over memorized flags when something doesn't match this document.
+
+## Skill Family
+
+This is the core skill — setup and mechanics only. Domain workflows live in sibling skills:
+
+| Skill | Use for |
+|---|---|
+| `specset-search` | Finding anything across specs, drawings, submittals, RFIs, documents, and closeout records |
+| `specset-projects` | Creating projects, uploading spec/drawing PDFs, publishing spec and drawing sets |
+| `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews |
+| `specset-rfis` | RFI logging, tracking, and responses |
+| `specset-closeout` | Assets, locations, products, companies, warranties, and maintenance |
+| `specset-agent` | Delegating deep project questions to Specbook's in-app AI agent |
+| `specset-admin` | Org members, invites, and whitelabel branding |
+
+`specset skill install` installs and updates the whole family (`specset skill list` shows what's bundled) — if a skill named above is missing from your skills directory, run it.
 
 ## First-Run Setup
 
@@ -70,7 +86,7 @@ GQL
 
 ### Variable Limitations
 
-`-F key=value` only sends **string** values. For non-string args (numbers, booleans, enums, input objects, lists), inline literals directly in the operation rather than parameterizing them.
+`-F key=value` only sends **string** values. For non-string args (numbers, booleans, enums, input objects, lists), inline literals directly in the operation rather than parameterizing them. Reserve `-F` for IDs and plain strings.
 
 ### Schema Discovery
 
@@ -87,22 +103,56 @@ specset api --query '{ __type(name: "Project") { fields { name type { name kind 
 specset api --query '{ __type(name: "CreateSubmittalInput") { inputFields { name type { name kind ofType { name } } } } }'
 ```
 
-## Agent Chat
+The domain skills document the operations that matter for each workflow, but they are not exhaustive — when an operation or argument doesn't match, introspect rather than guess.
 
-`specset agent chat` sends a message to a Specbook agent and waits for the full response — useful for asking questions that need Specbook's own project understanding (drawings, specs, schedules) rather than raw data access:
+## Uploading Files
+
+Several workflows attach an uploaded file — submittal PDFs, RFI attachments, project documents, org logos. Files are uploaded directly to storage via a presigned URL, so attaching one is a three-step flow that needs `bash`, `curl`, and `jq`. The result is a **file id** you pass to whatever mutation consumes it.
+
+1. Request a presigned upload URL:
 
 ```bash
-# Ask a question scoped to a project
-specset agent chat --project <projectId> -m "What mechanical equipment is scheduled on level 2?"
-
-# Continue the same conversation
-specset agent chat --thread <threadId> -m "Which of those have submittals?"
-
-# Review a past conversation
-specset agent show <threadId>
+specset api --query 'mutation($orgId: ID!) {
+  generateFileUploadUrl(orgId: $orgId) { id url fields { key value } }
+}' -F orgId=<your-org-id> > upload.json
 ```
 
-Use `--json` for machine-readable output (all commands accept it). Long-running questions may need `--timeout <seconds>`.
+2. POST the file to that URL with the returned form fields — the `file` field must come **last**:
+
+```bash
+URL=$(jq -r '.data.generateFileUploadUrl.url' upload.json)
+ARGS=()
+while IFS= read -r kv; do ARGS+=(-F "$kv"); done \
+  < <(jq -r '.data.generateFileUploadUrl.fields[] | "\(.key)=\(.value)"' upload.json)
+curl -sf -X POST "${ARGS[@]}" -F "file=@document.pdf" "$URL"
+```
+
+3. Finalize the upload to create the file record and capture its id:
+
+```bash
+UPLOAD_ID=$(jq -r '.data.generateFileUploadUrl.id' upload.json)
+FILE_ID=$(specset api --query 'mutation($orgId: ID!, $id: ID!, $filename: String!) {
+  completeUpload(orgId: $orgId, id: $id, filename: $filename) { id }
+}' -F orgId=<your-org-id> -F id=$UPLOAD_ID -F filename=document.pdf | jq -r '.data.completeUpload.id')
+```
+
+Get your org id first if you don't have it:
+
+```bash
+specset api --query '{ me { orgMembers { org { id slug name } } } }'
+```
+
+## Waiting on Background Processing
+
+Document imports and other bulk operations return a `BulkAction` and continue in the background. There are no subscriptions over `specset api` — poll with short sleeps and cap your retries:
+
+```bash
+specset api --query 'query($id: ID!) {
+  bulkAction(id: $id) { totalCount completedCount failedCount }
+}' -F id=<bulk-action-id>
+```
+
+Processing large PDF sets takes minutes; poll every 15–30 seconds and tell the user what's in flight rather than blocking silently.
 
 ## Safety Rules
 
@@ -116,5 +166,6 @@ Use `--json` for machine-readable output (all commands accept it). Long-running 
 - `command not found: specset` — run the First-Run Setup above.
 - `Not logged in` — run `specset login` (opens the user's browser; tell them to complete sign-in there).
 - `No active organization selected` — run `specset org list`, then `specset org use <slug>`.
+- A lookup by id returns `null` without an error — the record usually belongs to a different org than the active one; check `specset auth status` and switch with `specset org use <slug>`.
 - Login requires a browser; on a headless machine, run the CLI from a machine with a browser first, or contact Specbook support about headless options.
-- After upgrading the CLI (`npm i -g @specset/cli@latest`), refresh this skill with `specset skill install`.
+- After upgrading the CLI (`npm i -g @specset/cli@latest`), refresh the skills with `specset skill install`.
