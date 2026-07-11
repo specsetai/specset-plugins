@@ -48,6 +48,8 @@ The skills default to read-only operations and ask before anything that changes 
 
 These skills are published in lockstep with `@specset/cli` releases; the plugin version matches the CLI version. Claude Code picks up updates via `/plugin marketplace update`. If you installed via `specset skill install`, re-run it after upgrading the CLI.
 
+> **This repository is generated — do not hand-edit `plugins/specset/**`.** The skills are the source that ships inside `@specset/cli` (`apps/cli/skills/*` in the CLI source repo). A scheduled workflow ([`.github/workflows/sync-from-npm.yml`](.github/workflows/sync-from-npm.yml)) pulls the latest published npm package and regenerates the mirror, so a new CLI release appears here within the hour. To change a skill, edit it in the CLI source repo and cut a release.
+
 ## Support
 
 Questions or issues: [https://specset.com](https://specset.com)

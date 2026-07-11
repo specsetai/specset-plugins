@@ -1,0 +1,74 @@
+name: Sync skills from npm
+
+# This repository is a GENERATED mirror of the skills bundled with @specset/cli.
+# Do NOT hand-edit plugins/specset/** — this workflow pulls the latest published
+# package from npm and regenerates the mirror. To change a skill, edit
+# apps/cli/skills/* in the CLI source repo and cut a new @specset/cli release.
+#
+# Pull-based by design: the mirror updates itself from the published npm artifact
+# using the built-in GITHUB_TOKEN, so no cross-repo write credential is stored
+# anywhere. A new release is picked up within the hour (or immediately via the
+# manual "Run workflow" button).
+on:
+  schedule:
+    - cron: '17 * * * *' # hourly
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-from-npm
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # Never run on forks of this mirror.
+    if: github.repository == 'specsetai/specset-skill'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Resolve published vs current version
+        id: v
+        run: |
+          PUBLISHED=$(npm view @specset/cli version 2>/dev/null || true)
+          CURRENT=$(node -p "require('./plugins/specset/.claude-plugin/plugin.json').version" 2>/dev/null || true)
+          echo "published=$PUBLISHED" >> "$GITHUB_OUTPUT"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          if [ -z "$PUBLISHED" ]; then
+            echo "::notice::@specset/cli is not published to npm yet — nothing to sync."
+          else
+            echo "::notice::published=$PUBLISHED current=$CURRENT"
+          fi
+
+      - name: Pull package and regenerate the mirror
+        if: steps.v.outputs.published != ''
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.v.outputs.published }}"
+          WORK="$(mktemp -d)"
+          ( cd "$WORK" && npm pack "@specset/cli@${VERSION}" >/dev/null && tar -xzf ./*.tgz )
+          PKG="$WORK/package"
+
+          # Mirror the skills tree exactly (also drops skills no longer shipped).
+          rsync -a --delete "$PKG/skills/" plugins/specset/skills/
+
+          # Bump the plugin + marketplace manifest versions to match the package.
+          PKG_JSON="$PKG/package.json" node .github/scripts/write-manifests.mjs
+
+      - name: Commit if the mirror changed
+        if: steps.v.outputs.published != ''
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Mirror already matches @specset/cli@${{ steps.v.outputs.published }}."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Sync skills from @specset/cli@${{ steps.v.outputs.published }}"
+          git push
