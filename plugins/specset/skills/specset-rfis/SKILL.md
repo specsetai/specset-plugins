@@ -1,7 +1,7 @@
 ---
 name: specset-rfis
 description: Manage Specset RFIs — list, search, create, update, and record responses including the official answer of record. Use for any RFI logging or tracking task.
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash Read AskUserQuestion
 ---
 
 # Specset RFIs

@@ -1,7 +1,7 @@
 ---
 name: specset-search
 description: Use when the user asks to find, look up, or locate anything in their Specset projects — semantic and keyword search across specs, drawing sheets, submittals, RFIs, documents, and closeout records.
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash Read AskUserQuestion
 ---
 
 # Specset Search

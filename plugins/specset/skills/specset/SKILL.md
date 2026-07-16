@@ -1,7 +1,7 @@
 ---
 name: specset
 description: Core CLI for Specset — install, authenticate, switch organizations, and run GraphQL with `specset api`. Start here for any Specset task, and whenever a specset command fails with auth or org errors.
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash Read AskUserQuestion
 ---
 
 # Specset CLI (`specset`)
@@ -24,7 +24,7 @@ This is the core skill — setup and mechanics only. Domain workflows live in si
 | `specset-agent` | Delegating deep project questions to Specset's in-app AI agent |
 | `specset-admin` | Org members, invites, and whitelabel branding |
 
-`specset skill install` installs and updates the whole family (`specset skill list` shows what's bundled) — if a skill named above is missing from your skills directory, run it.
+`specset skill install --target <claude|codex|chatgpt>` installs and updates the whole family (`specset skill list` shows what's bundled) — if a skill named above is missing from your skills directory, run it for the current agent.
 
 ## First-Run Setup
 
@@ -44,7 +44,15 @@ Requires Node.js 20+ with npm. If `npm` itself is missing, stop and ask the user
 specset login
 ```
 
-Login is interactive by design — never try to bypass it or handle credentials directly. On a headless machine (no browser), login isn't possible; direct the user to a machine with a browser. Don't launch a login mid-task without telling the user what's happening.
+Login is interactive by design — never try to bypass it or handle credentials directly. Don't launch a login mid-task without telling the user what's happening.
+
+**On a headless machine** (container, SSH, CI — anywhere the browser isn't on this machine), use the device flow instead:
+
+```bash
+specset login --device
+```
+
+It prints a short code and a link (`https://<host>/device?code=XXXX-XXXX`). Show both to the user and ask them to open the link on any device and approve; the command completes on its own once they do. The code expires after 15 minutes — if it does, run the command again for a fresh one.
 
 3. Pick the active organization (required for org-scoped queries):
 
@@ -167,5 +175,5 @@ Processing large PDF sets takes minutes; poll every 15–30 seconds and tell the
 - `Not logged in` — run `specset login` (opens the user's browser; tell them to complete sign-in there).
 - `No active organization selected` — run `specset org list`, then `specset org use <slug>`.
 - A lookup by id returns `null` without an error — the record usually belongs to a different org than the active one; check `specset auth status` and switch with `specset org use <slug>`.
-- Login requires a browser; on a headless machine, run the CLI from a machine with a browser first, or contact Specset support about headless options.
-- After upgrading the CLI (`npm i -g @specset/cli@latest`), refresh the skills with `specset skill install`.
+- Login hangs or the browser can't reach this machine (SSH, container, CI) — use `specset login --device`: it prints a code + link the user approves from any device.
+- After upgrading the CLI (`npm i -g @specset/cli@latest`), refresh the skills with `specset skill install --target <claude|codex|chatgpt>`.

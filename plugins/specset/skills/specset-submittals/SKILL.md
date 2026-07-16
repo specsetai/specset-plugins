@@ -1,7 +1,7 @@
 ---
 name: specset-submittals
 description: Manage Specset submittals — list, search, create, revise, attach files, track approvers, and run AI spec-compliance reviews. Use for any submittal log or submittal review task.
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash Read AskUserQuestion
 ---
 
 # Specset Submittals

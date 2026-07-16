@@ -1,7 +1,7 @@
 ---
 name: specset-agent
 description: Ask Specset's in-project AI agent questions that need deep project understanding — schedules, spec interpretation, cross-document analysis — via `specset agent chat`. Use when raw GraphQL isn't enough or when unsure how to answer from data.
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash Read AskUserQuestion
 ---
 
 # Specset Agent Chat

@@ -1,7 +1,7 @@
 ---
 name: specset-admin
 description: Use when administering a Specset organization — inviting and managing members and roles, or applying whitelabel branding (colors, logos) — for org membership, permissions, or appearance tasks.
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash Read AskUserQuestion
 ---
 
 # Org Administration

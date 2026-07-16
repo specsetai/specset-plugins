@@ -1,7 +1,7 @@
 ---
 name: specset-projects
 description: Use when standing up a new Specset project or adding document sets to one — create the project, upload spec/drawing PDFs, monitor processing, and publish spec sets and drawing sets.
-allowed-tools: Bash, Read, AskUserQuestion
+allowed-tools: Bash Read AskUserQuestion
 ---
 
 # Specset Projects
