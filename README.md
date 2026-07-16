@@ -2,7 +2,7 @@
 
 Teach your AI agent to work with [Specset](https://specset.com): search your organization's specs and drawings, set up projects, manage submittals, RFIs, and closeout data, and chat with Specset's project agents — all from Claude Code, Cursor, Codex, Gemini CLI, or any agent that supports the [Agent Skills](https://agentskills.io) standard.
 
-The skills are self-bootstrapping: on first use they install the [`@specset/cli`](https://www.npmjs.com/package/@specset/cli) and walk you through signing in.
+The skills are self-bootstrapping: on first use they install or update the [`@specset/cli`](https://www.npmjs.com/package/@specset/cli) and walk you through browser or device-code sign-in.
 
 ## Get started
 
@@ -25,7 +25,13 @@ Then just ask your agent a question:
 
 > *"What mechanical equipment is scheduled on level 2 of the Riverside project?"*
 
-The first time, your agent will install the CLI (Node.js 20+ required) and open your browser to sign in to Specset. After that, it's ready whenever you ask.
+The first time, your agent will install the CLI (Node.js 20+ required) and sign in to Specset. With a visible local browser it uses `specset login`; in a remote, headless, or in-app session where the browser is not visible, it uses device authentication:
+
+```bash
+specset login --device
+```
+
+The CLI prints a code and link that you can approve from any device. After that, it's ready whenever you ask.
 
 ## The skills
 
@@ -46,7 +52,16 @@ The skills default to read-only operations and ask before anything that changes 
 
 ## Versioning
 
-These skills are published in lockstep with `@specset/cli` releases; the plugin version matches the CLI version. Claude Code picks up updates via `/plugin marketplace update`. If you installed via `specset skill install`, re-run it after upgrading the CLI.
+These skills are published in lockstep with `@specset/cli` releases; the plugin version matches the CLI version. Claude Code caches the marketplace and installed plugin separately, so refresh both from a terminal:
+
+```bash
+claude plugin marketplace update specset
+claude plugin update specset@specset
+```
+
+Then run `/reload-plugins` in the active Claude Code session or restart it. Use the matching `--scope` with `claude plugin update` for a project- or local-scope install.
+
+Updating the plugin does not replace an existing global CLI. Check `specset --version`; if it is older than the plugin, run `npm install -g @specset/cli@latest`. If you installed the skills directly with `specset skill install`, re-run `specset skill install --target claude` after upgrading the CLI.
 
 > **This repository is generated — do not hand-edit `plugins/specset/**`.** The skills are the source that ships inside `@specset/cli` (`apps/cli/skills/*` in the CLI source repo). A scheduled workflow ([`.github/workflows/sync-from-npm.yml`](.github/workflows/sync-from-npm.yml)) pulls the latest published npm package and regenerates the mirror, so a new CLI release appears here within the hour. To change a skill, edit it in the CLI source repo and cut a release.
 
