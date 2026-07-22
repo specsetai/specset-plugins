@@ -18,6 +18,8 @@ Remember Variable Limitations from the `specset` skill: `-F` sends **strings onl
 - **`quickSearch`** — fast flat matching against titles and identifiers; use when the user roughly knows the record's name or number.
 - **Precise lookups** — when the user already has a spec section number or drawing sheet number, skip search and fetch directly.
 
+> Need the actual content, not just previews and IDs? The `specset-tools` skill exposes Specset's own retrieval tools (`specset tools run searchSpecSections`, `searchDrawingSheets`, `searchDocuments`, …), which return expanded, citation-anchored markdown. Use `search`/`quickSearch` here to locate records cheaply; reach for `specset-tools` when you need to read and reason over the content.
+
 ## Unified Search: `search`
 
 ```graphql

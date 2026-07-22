@@ -17,6 +17,7 @@ This is the core skill — setup and mechanics only. Domain workflows live in si
 | Skill | Use for |
 |---|---|
 | `specset-search` | Finding anything across specs, drawings, submittals, RFIs, documents, and closeout records |
+| `specset-tools` | Calling Specset's own retrieval tools directly (`specset tools`, `specset mcp`) — deeper than search, lighter than the in-app agent |
 | `specset-projects` | Creating projects, uploading spec/drawing PDFs, publishing spec and drawing sets |
 | `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews |
 | `specset-rfis` | RFI logging, tracking, and responses |
@@ -122,6 +123,20 @@ specset api --query '{ __type(name: "CreateSubmittalInput") { inputFields { name
 ```
 
 The domain skills document the operations that matter for each workflow, but they are not exhaustive — when an operation or argument doesn't match, introspect rather than guess.
+
+## Agent Tools and MCP
+
+Beyond raw GraphQL, the CLI exposes Specset's own retrieval tools — semantic and keyword search over specs, drawings, submittals, RFIs, documents (plus closeout and schedule where enabled) — for an AI agent to call directly. Reach for these when you want the actual content to reason over, not just record previews.
+
+- **As commands:** `specset tools list` to see what's available, then `specset tools run <name> --input '{...}'` (or `-F key=value`).
+- **As a native MCP server:** `specset mcp` runs a stdio MCP server that surfaces these tools to an MCP client, reusing your CLI login, org, and host. Register it once:
+
+```bash
+claude mcp add specset -- specset mcp      # Claude Code
+codex mcp add specset -- specset mcp       # Codex
+```
+
+See the `specset-tools` skill for the full workflow — project scoping, the `-F` JSON-parsing difference, and the `sb://` citation convention.
 
 ## Uploading Files
 
