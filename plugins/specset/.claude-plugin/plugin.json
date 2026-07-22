@@ -5,5 +5,13 @@
   "author": {
     "name": "Specset"
   },
-  "homepage": "https://specset.com"
+  "homepage": "https://specset.com",
+  "mcpServers": {
+    "specset": {
+      "command": "specset",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
 }
