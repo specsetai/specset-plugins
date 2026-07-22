@@ -41,6 +41,7 @@ The core `specset` skill covers setup, authentication, and running GraphQL. Doma
 |---|---|
 | `specset` | Setup, sign-in, org switching, and running GraphQL with `specset api` |
 | `specset-search` | Finding anything across specs, drawings, submittals, RFIs, documents, and closeout records |
+| `specset-tools` | Calling Specset's retrieval tools directly (`specset tools`, `specset mcp`) — deeper than search, lighter than the in-app agent |
 | `specset-projects` | Creating projects, uploading spec/drawing PDFs, publishing spec and drawing sets |
 | `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews |
 | `specset-rfis` | RFI logging, tracking, and responses |
@@ -49,6 +50,18 @@ The core `specset` skill covers setup, authentication, and running GraphQL. Doma
 | `specset-admin` | Org members, invites, and whitelabel branding |
 
 The skills default to read-only operations and ask before anything that changes data. Credentials are managed by the CLI via browser OAuth — the agent never sees or stores them.
+
+## Native tools (MCP)
+
+Installing this plugin also registers a **native MCP server**, giving your agent direct access to Specset's read-only retrieval tools — semantic and keyword search over specs, drawings, submittals, RFIs, and documents (plus closeout and schedule where enabled), and structured reads of their content. This is the middle tier between raw GraphQL and delegating to the in-app agent: use it when you want the actual content to reason over.
+
+The server runs the `specset` CLI (`specset mcp`), so it activates once the CLI is installed and you've signed in — both of which the skills handle on first use. Until then, Claude Code simply skips it (no error). After your first sign-in, restart Claude Code (or run `/reload-plugins`) for the tools to appear.
+
+Need a non-default host or a pinned project? Register your own entry instead:
+
+```bash
+claude mcp add specset -- specset mcp --host <url> --project <id>
+```
 
 ## Versioning
 
