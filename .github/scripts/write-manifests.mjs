@@ -16,8 +16,13 @@ const description =
 // to the globally-installed `specset` CLI (`specset mcp`), which the bundled
 // skills install and authenticate on first use — until then Claude Code simply
 // skips the server, so there is no error if the CLI isn't present yet. Requires
-// @specset/cli >= 0.4.0 (the release that adds the `mcp` subcommand). Curated
-// here alongside `description` so it survives the hourly skills resync.
+// @specset/cli >= 0.4.0 (the release that adds the `mcp` subcommand).
+//
+// Claude Code discovers a plugin's MCP servers from a `.mcp.json` file at the
+// plugin root — an inline `mcpServers` key in plugin.json is NOT read (verified
+// empirically: `claude plugin details` reports 0 servers for the inline form,
+// 1 for the file). Written fresh each run below; it isn't part of the rsync'd
+// skills tree, so it persists across the hourly resync.
 const mcpServers = {
   specset: {
     command: 'specset',
@@ -34,8 +39,14 @@ function patch(path, fn) {
 patch('plugins/specset/.claude-plugin/plugin.json', (j) => {
   j.description = description;
   j.version = pkg.version;
-  j.mcpServers = mcpServers;
+  // Note: MCP servers are declared in plugins/specset/.mcp.json, not here.
+  delete j.mcpServers;
 });
+
+writeFileSync(
+  'plugins/specset/.mcp.json',
+  `${JSON.stringify({ mcpServers }, null, 2)}\n`,
+);
 
 patch('.claude-plugin/marketplace.json', (j) => {
   for (const plugin of j.plugins ?? []) {
