@@ -56,6 +56,43 @@ Tool results embed identifiers shaped like `sb://spec/<uuid>` or `sb://drawing/<
 
 Most tools are project-scoped. Either pass `--project` (a UUID or `sb://project/...`), or include `projectId` in the tool input. Use `listProjects` to discover project IDs. With `--project` set, per-call `projectId` becomes optional.
 
+## Downloading source files (drawings, documents, specs, submittals, RFIs)
+
+The retrieval tools return **extracted text**, which is authoritative for schedules, notes, and spec paragraphs — but cannot answer spatial/visual questions (routing, clearances, what a plan view actually shows) and never carries the original file. Every entity has a download command, and **each accepts its `sb://` citation URL verbatim** (as returned by issues, search, and tool results — any `#page=`/`#nodeId=` fragment is ignored) or a bare UUID:
+
+```bash
+# Drawing sheets — image (rendered PNG, default), pdf (single-sheet), file (whole set).
+# Also accepts a sheet number with --project. Read the PNG with vision to inspect geometry.
+specset drawings download 'sb://drawing/<uuid>#nodeId=d1' --out /tmp/sheets/
+specset drawings download E308 --project <projectId> --format pdf
+
+# Project documents — also covers RFI attachments and closeout documents,
+# which all reference a document:
+specset docs download 'sb://doc/<uuid>'
+
+# Spec sections — per-section PDF slice (default) or the whole source spec file.
+# Also accepts a section number with --project:
+specset specs download '23 31 19' --project <projectId>
+specset specs download 'sb://spec/<uuid>' --asset book
+
+# Submittals — compiled package (default when present), cover sheet, or attachments.
+# --list shows the asset inventory first:
+specset submittals download 'sb://sub/<uuid>' --list
+specset submittals download 'sb://sub/<uuid>' --asset attachment --index 2
+specset submittals download 'sb://sub/<uuid>' --asset attachment --all --out ./sub-42/
+
+# RFIs — question + response attachments:
+specset rfis download 'sb://rfi/<uuid>' --list
+specset rfis download 'sb://rfi/<uuid>' --all --out ./rfi-7/
+
+# Raw file resources — the escape hatch when you already hold an sb://file id:
+specset files download 'sb://file/<uuid>'
+```
+
+All commands support `--json` (structured `{files: [{path, bytes, ...}]}` output) and `--out` (file path, or directory for multi-file downloads). A citation passed to the wrong command errors with the right one to use.
+
+Typical loop for drawings: search or `getDrawingSheetContent` to find the sheet → hit a visual question the text can't settle → `drawings download` → **read the PNG with your vision/file-reading tool**.
+
 ## MCP server (Claude Code, Codex, other MCP clients)
 
 `specset mcp` runs a stdio MCP server that exposes these tools natively, reusing your CLI login, org, and host config. Register it once and the client can call the tools directly:
