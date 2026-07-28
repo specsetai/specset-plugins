@@ -9,14 +9,14 @@ The skills are self-bootstrapping: on first use they install or update the [`@sp
 **Claude Code:**
 
 ```
-/plugin marketplace add specsetai/specset-skill
+/plugin marketplace add specsetai/specset-plugins
 /plugin install specset
 ```
 
 **Any other agent** — tell it to fetch and follow the core skill:
 
 ```
-https://raw.githubusercontent.com/specsetai/specset-skill/main/plugins/specset/skills/specset/SKILL.md
+https://raw.githubusercontent.com/specsetai/specset-plugins/main/plugins/specset/skills/specset/SKILL.md
 ```
 
 (Or, with the CLI already installed: `specset skill install` copies every skill into `~/.claude/skills`, `specset skill list` shows what's available, and `specset skill print <name>` emits one to stdout.)
@@ -68,8 +68,8 @@ claude mcp add specset -- specset mcp --host <url> --project <id>
 These skills are published in lockstep with `@specset/cli` releases; the plugin version matches the CLI version. Claude Code caches the marketplace and installed plugin separately, so refresh both from a terminal:
 
 ```bash
-claude plugin marketplace update specset
-claude plugin update specset@specset
+claude plugin marketplace update specset-plugins
+claude plugin update specset@specset-plugins
 ```
 
 Then run `/reload-plugins` in the active Claude Code session or restart it. Use the matching `--scope` with `claude plugin update` for a project- or local-scope install.
