@@ -6,11 +6,9 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Specset Search
 
-Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
-
 This skill is read-only — everything here is a query, so nothing needs user confirmation before running.
 
-Remember Variable Limitations from the `specset` skill: `-F` sends **strings only**. Inline every enum, boolean, int, and list as a literal in the operation text; reserve `-F` for IDs and plain strings. If an operation or argument below doesn't match what the server accepts, introspect rather than guess — see Schema Discovery in the `specset` skill.
+`-F` sends strings only: inline enums, booleans, ints, and lists as literals in the operation text (Variable Limitations and Schema Discovery live in the `specset` skill).
 
 ## Choosing an Operation
 
@@ -42,13 +40,13 @@ At least one of `query` or `keywords` is required; they can be combined. Results
 { groups { referenceType totalCount items { url title previewText score projectId projectName } } nextOffset }
 ```
 
-### Project Scope (`ProjectScope`, inline it)
+### Project Scope (`ProjectScope`)
 
 - `CurrentProject` — default; `projectId` is required.
 - `MyProjects` — every project the user is a member of in the org.
 - `AllProjects` — every project in the org. Requires the org **Manager** or **Admin** role — plain Members get an authorization error, so fall back to `MyProjects` when that happens.
 
-### Record Types (`SourceReferenceType`, inline it)
+### Record Types (`SourceReferenceType`)
 
 Filter with `referenceTypes`. Common values: `SpecSection`, `DrawingSheet`, `Document`, `Submittal`, `SubmittalAttachment`, `Rfi`, and the closeout types `Company`, `Location`, `Product`, `Asset`, `Warranty`, `MaintenanceTask`. Introspect the `SourceReferenceType` enum for the full list.
 
@@ -78,7 +76,7 @@ specSectionByNumber(projectId: ID!, sectionNumber: String!): SpecSection      # 
 drawingSheetByNumber(projectId: ID!, sheetNumber: String!): DrawingSheet      # nullable
 ```
 
-To browse or filter within a project, the paginated lists take `projectId`, an optional `search` string, and `limit`/`offset` ints (inline the ints); both return `{ items totalFilteredCount }`:
+To browse or filter within a project, the paginated lists take `projectId`, an optional `search` string, and `limit`/`offset` ints; both return `{ items totalFilteredCount }`:
 
 ```graphql
 paginatedSpecSections(projectId: ID!, search: String, limit: Int, offset: Int): SpecSectionPage!
@@ -87,23 +85,7 @@ paginatedDrawingSheets(projectId: ID!, search: String, limit: Int, offset: Int):
 
 Useful item fields: `id sectionNumber title numberAndTitle` on SpecSection, `id sheetNumber title` on DrawingSheet.
 
-## Examples
-
-Semantic search scoped to one project:
-
-```bash
-specset api --query 'query($orgId: ID!, $projectId: ID!, $q: String!) {
-  search(orgId: $orgId, projectId: $projectId, query: $q,
-         projectScope: CurrentProject, limit: 10) {
-    groups { referenceType totalCount
-             items { url title previewText score } }
-    nextOffset
-  }
-}' -F orgId=<org-id> -F projectId=<project-id> \
-   -F q='vibration isolation requirements for rooftop mechanical equipment'
-```
-
-Keyword search filtered to submittals, across all of the user's projects (note the inlined list, enums, and int):
+## Example
 
 ```bash
 specset api --query 'query($orgId: ID!) {
@@ -116,18 +98,7 @@ specset api --query 'query($orgId: ID!) {
 }' -F orgId=<org-id>
 ```
 
-Direct lookup by section number:
-
-```bash
-specset api --query 'query($projectId: ID!, $n: String!) {
-  specSectionByNumber(projectId: $projectId, sectionNumber: $n) {
-    id sectionNumber title numberAndTitle
-  }
-}' -F projectId=<project-id> -F n='23 05 48'
-```
-
 ## Working With Results
 
-- Each result's `url` is a Specset reference URL — `sb://spec/<id>`, `sb://drawing/<id>`, `sb://sub/<id>`, `sb://rfi/<id>`, `sb://doc/<id>`, and so on. The UUID inside is the record's GraphQL `id`; extract it for follow-up queries on that record.
-- Lookups by id are scoped to the **active org**: an id from a different org returns `null` rather than an error. If a known-good id comes back null, check `specset auth status` and switch orgs.
+- Each result's `url` is a Specset reference URL (`sb://spec/<id>`, `sb://sub/<id>`, …); the UUID inside is the record's GraphQL `id` — extract it for follow-up queries. The scheme is documented in the `specset-tools` skill.
 - For follow-up work on what you found — updating submittals, answering RFIs, closeout records, or project/document changes — hand off to the `specset-submittals`, `specset-rfis`, `specset-closeout`, or `specset-projects` skill.

@@ -6,15 +6,13 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Specset Submittals
 
-Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
-
 How the data is shaped:
 
 - `status` (SubmittalStatus: `Draft | Open | Closed`) is the log lifecycle; `workingStatus` (SubmittalWorkingStatus: `Draft | Submitted | Pending | Approved | ApprovedAsNoted | Rejected | ReviseAndResubmit | ForRecordOnly | Void`) is the ball-in-court state. Set either — the server reconciles the other.
 - Revisions are separate submittal records sharing a `submittalNumber`; list and search queries return only the current revision.
 - A submittal number is only unique per (spec section, number) within a project — the bare number alone is not.
 
-The sketches below are minimal. When an operation or argument doesn't match, introspect rather than guess (see Schema Discovery in the `specset` skill). Enums, booleans, ints, and lists must be inlined in the operation text — reserve `-F` for IDs and plain strings (see Variable Limitations there).
+The sketches below are minimal — inline enums, ints, and lists in the operation text (`-F` is strings-only; Variable Limitations and Schema Discovery live in the `specset` skill).
 
 ## Reading
 
@@ -46,22 +44,9 @@ Also available:
 
 ## Creating
 
-Dedupe first: run `searchSubmittals` with the submittal number (or title plus section). A match on (spec section, number) is authoritative — never create a duplicate; the API does not enforce this for you. Omit `submittalNumber` to auto-number in the project's sequence.
+Dedupe first: run `searchSubmittals` with the submittal number (or title plus section). A match on (spec section, number) is authoritative — never create a duplicate; the API does not enforce this for you.
 
-```bash
-specset api <<'GQL'
-mutation {
-  createSubmittal(input: {
-    projectId: "<project-id>"
-    title: "Hollow Metal Doors and Frames - Product Data"
-    submittalNumber: "08 11 13-001"
-    specSectionIds: ["<spec-section-id>"]
-    submittalTypeId: "<submittal-type-id>"
-    status: Draft
-  }) { id submittalNumber title }
-}
-GQL
-```
+`createSubmittal(input: { projectId, title, submittalNumber, specSectionIds: [...], submittalTypeId, status }) { id submittalNumber title }` — omit `submittalNumber` to auto-number in the project's sequence.
 
 **From a PDF**: upload it first (see Uploading Files in the `specset` skill) and pass the resulting file id as `cloudFileId` — Specset extracts the number, title, and section from the document, so you can omit them. Add `autoReviewMode: GeneratePlanAndApprove` to start an AI compliance review in the same call (`GeneratePlan` pauses at the plan for approval; default `None`).
 
@@ -96,52 +81,19 @@ File ids come from Uploading Files in the `specset` skill.
 
 Track who reviews the submittal and what they returned:
 
-```bash
-specset api <<'GQL'
-mutation {
-  createSubmittalApprover(input: {
-    submittalId: "<submittal-id>"
-    userId: "<user-id>"
-    dueDate: "2026-08-01T00:00:00Z"
-    responseRequired: true
-  }) { id order status }
-}
-GQL
-```
+- `createSubmittalApprover(input: { submittalId, userId, dueDate, responseRequired }) { id order status }`
 
 Record a returned response with `updateSubmittalApprover(input: { id, status: ApprovedAsNoted, comment: "...", returnedDate: "...", cloudFileIds: [...] })`. `status` is SubmittalApproverResponseStatus: `Approved | ApprovedAsNoted | ForRecordOnly | Pending | Rejected | ReviseAndResubmit | Void | Submitted`. `approverType` distinguishes `Approver` (default) from `Submitter`; `sentDate` and `distributed` track routing. Remove with `deleteSubmittalApprover(id)`.
 
 ## AI Compliance Reviews
 
-Three steps: create, poll, compile. Arguments are top-level (no input object).
+Three steps — arguments are top-level (no input object):
 
-```bash
-# 1. Start the review
-specset api --query 'mutation($submittalId: ID!) {
-  createSubmittalReview(submittalId: $submittalId, createMode: GeneratePlanAndApprove) { id }
-}' -F submittalId=<submittal-id>
-```
+1. `createSubmittalReview(submittalId, createMode: GeneratePlanAndApprove) { id }` — optional: `prompt` (focus instructions, a plain string), and `specSectionIds` / `drawingSheetIds` (inline lists) to pin the spec basis.
+2. Poll `submittalReview(id) { id status oneLiner lastReviewedAt }` until `lastReviewedAt` is set — reviews take minutes; see Waiting on Background Processing in the `specset` skill for cadence. `status` is the verdict, ReviewStatus: `Compliant | NonCompliant | MissingInfo | ClarificationsNeeded | NotApplicable`.
+3. `compileSubmittalReview(id, includeIssueToc: true) { id compiledReview { id } }` compiles the annotated, marked-up PDF. `excludedIssueIds: [...]` (inlined) drops chosen issues from the compiled PDF and TOC.
 
-Optional: `prompt` (focus instructions, a plain string), and `specSectionIds` / `drawingSheetIds` (inline lists) to pin the spec basis.
-
-```bash
-# 2. Poll until lastReviewedAt is set — reviews take minutes; see
-#    Waiting on Background Processing in the specset skill for cadence
-specset api --query 'query($id: ID!) {
-  submittalReview(id: $id) { id status oneLiner lastReviewedAt }
-}' -F id=<review-id>
-```
-
-`status` is the verdict, ReviewStatus: `Compliant | NonCompliant | MissingInfo | ClarificationsNeeded | NotApplicable`.
-
-```bash
-# 3. Compile the annotated, marked-up PDF
-specset api --query 'mutation($id: ID!) {
-  compileSubmittalReview(id: $id, includeIssueToc: true) { id compiledReview { id } }
-}' -F id=<review-id>
-```
-
-`excludedIssueIds: [...]` (inlined) drops chosen issues from the compiled PDF and TOC. `updateSubmittalReview(id, comments)` records reviewer comments; `deleteSubmittalReview(id)` removes a review.
+`updateSubmittalReview(id, comments)` records reviewer comments; `deleteSubmittalReview(id)` removes a review.
 
 ## Drafting a Whole Submittal Log
 
@@ -159,6 +111,4 @@ Applying skips rows whose (section, number) already exists and writes per-row re
 
 ## Safety
 
-- Confirm with the user before every mutation (see Safety Rules in the `specset` skill) — creates included.
-- `deleteSubmittal(id)` removes one revision. `deleteSubmittal(id, deleteAllRevisions: true)` removes the entire revision chain — state that difference and get explicit confirmation before using it.
-- Never loop deletes over a list the user hasn't seen.
+`deleteSubmittal(id)` removes one revision; `deleteSubmittal(id, deleteAllRevisions: true)` removes the entire revision chain — state that difference when confirming the delete.

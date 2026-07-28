@@ -6,9 +6,7 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Specset Projects
 
-Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
-
-This skill mutates data — confirm with the user before each mutation, and always confirm the project name and which files belong to it before creating anything. Remember Variable Limitations from the `specset` skill: `-F` sends **strings only** — inline every enum, boolean, int, list, and input object as a literal; reserve `-F` for IDs and plain strings. When an operation or argument here doesn't match, introspect (see Schema Discovery in the `specset` skill).
+This skill mutates data — confirm the project name and which files belong to it before creating anything. Inline enums, ints, lists, and input objects in the operation text (`-F` is strings-only; Variable Limitations and Schema Discovery live in the `specset` skill).
 
 ## Reading Projects
 
@@ -22,7 +20,7 @@ project(id: ID!): Project!
 
 ## Creating a Project
 
-`createProject` does **not** add the creator as a project member, so the new project won't appear in the default `projects` list. Agents that miss this conclude the creation failed and create duplicates — don't. Fetch the new project by `project(id)`, and add membership as a separate step, mirroring the UI.
+`createProject` does **not** add the creator as a project member, so the new project won't appear in the default `projects` list — fetch it by `project(id)`, and add membership as a separate step, mirroring the UI.
 
 1. Create it:
 
@@ -103,11 +101,10 @@ updateDrawingSetPrecedence(projectId: ID!, drawingSetIds: [ID!]!): [DrawingSet!]
 ## Archiving and Deleting
 
 - **Prefer `archiveProject(id: ID!)`** — reversible via `unarchiveProject(id: ID!)`. Archived projects drop out of default lists but keep all data.
-- **`deleteProject(id: ID!)` permanently destroys the entire project** — documents, specs, drawings, submittals, RFIs, everything. Never run it without explicit user confirmation that names the exact project ("delete Riverside Medical Center — permanently?"). If the user just wants it out of the way, archive instead.
+- **`deleteProject(id: ID!)` permanently destroys the entire project** — documents, specs, drawings, submittals, RFIs, everything. Confirm with the user, naming the exact project, before running it. If they just want it out of the way, archive instead.
 
 ## Troubleshooting
 
 - Authorization error on a mutation — the user lacks that permission; the same rules as the UI apply. Surface the message, don't retry.
-- A freshly created project "missing" from `projects` — that's the membership gotcha above, not a failure. Check `project(id)` before recreating anything.
+- A freshly created project "missing" from `projects` — that's the membership gotcha above, not a failure.
 - A document reports a failed processing status on the BulkAction — report it to the user; re-uploading is their call.
-- A lookup by id returns `null` — the record belongs to a different org than the active one; check `specset auth status`.

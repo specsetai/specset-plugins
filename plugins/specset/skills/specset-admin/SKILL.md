@@ -6,9 +6,7 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Org Administration
 
-Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
-
-Every operation here takes your org id — get it with `{ me { orgMembers { org { id slug name } } } }` if you don't have it. Remember Variable Limitations in the `specset` skill: inline enums, lists, and input objects as literals in the operation text; reserve `-F` for ids and plain strings. When an operation or argument doesn't match this document, introspect (see the `specset` skill → Schema Discovery) rather than guess. These mutations change real people's access and the whole org's appearance — confirm each one with the user before running it.
+Every operation here takes your org id — get it with `{ me { orgMembers { org { id slug name } } } }` if you don't have it. Inline enums, lists, and input objects in the operation text (`-F` is strings-only; Variable Limitations and Schema Discovery live in the `specset` skill). These mutations change real people's access and the whole org's appearance.
 
 ## Members
 
@@ -35,7 +33,7 @@ Manage them (all take the **membership** id from the queries above, not the user
 
 - `updateOrgMember(id: ID!, role: ..., projectIds: [ID!])` — `role` is required even when unchanged, so resend the current role when only touching `projectIds`. `projectIds` scopes a Member to specific projects; omit it to leave project access alone.
 - `approveOrgMember(id: ID!)` — activate a `PendingApproval` member.
-- `deactivateOrgMember(id: ID!)` / `reactivateOrgMember(id: ID!)` — suspend and restore access. Deactivation is reversible and preserves history — always prefer it over any form of member deletion.
+- `deactivateOrgMember(id: ID!)` / `reactivateOrgMember(id: ID!)` — suspend and restore access. Deactivation is reversible and preserves history — prefer it over any form of member deletion.
 
 ```bash
 specset api --query 'mutation($id: ID!) {
@@ -88,7 +86,7 @@ specset api --query 'mutation($id: ID!) {
 }' -F id=<org-id>
 ```
 
-Pick a `brand` dark enough to hold white text (roughly: not a pastel) — it becomes button and link color on white backgrounds. Branding applies to every member of the org, so confirm the palette with the user before writing it.
+`brand` becomes the button and link color on white backgrounds, so it needs to hold white text. Branding applies to every member of the org — confirm the palette with the user before writing it.
 
 ### Logos
 
@@ -109,8 +107,6 @@ Use `logoId: $fileId` for the square mark. Passing `null` (inline) clears a slot
 
 ## Safety
 
-- Confirm every mutation before running it. For role changes, deactivations, and invite deletions, echo the affected person's email back to the user first — these change real access immediately.
-- Prefer `deactivateOrgMember` over anything destructive; never hard-delete a membership.
-- Never pass `maxCredits` or `skus` to `updateOrg` — those fields are managed by Specset and the mutation will be rejected.
-- On `updateOrg`, send only the fields you mean to change (plus the full `appearance` object when changing any part of it).
+- For role changes, deactivations, and invite deletions, echo the affected person's email back to the user first — these change real access immediately.
+- `updateOrg` rejects `maxCredits` and `skus` — those fields are managed by Specset. Send only the fields you mean to change (plus the full `appearance` object when changing any part of it).
 - Creating or deleting organizations, SSO, and email-domain management are out of scope for this skill — direct the user to support@specset.com.

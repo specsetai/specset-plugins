@@ -1,6 +1,6 @@
 ---
 name: specset
-description: Core CLI for Specset — install or update the CLI, authenticate with a browser or device code, switch organizations, and run GraphQL with `specset api`. Start here for any Specset task, and whenever a specset command fails with auth or org errors.
+description: Core CLI for Specset — install or update the CLI, authenticate with a browser or device code, switch organizations, and run GraphQL with `specset api`. Start here for CLI setup or raw GraphQL access, and whenever a specset command fails with auth or org errors.
 allowed-tools: Bash Read AskUserQuestion
 ---
 
@@ -29,56 +29,12 @@ This is the core skill — setup and mechanics only. Domain workflows live in si
 
 ## First-Run Setup
 
-Perform this setup yourself when the user installs or updates the skill/plugin, asks to get started with Specset, or when a command fails because the CLI is missing or unauthenticated. Every step is idempotent — skip any that's already satisfied.
+Run this when the user installs or updates the skill/plugin, asks to get started with Specset, or when a command fails because the CLI is missing or unauthenticated. Every step is idempotent — skip any that's already satisfied.
 
-1. Ensure the CLI is installed and current. Installing or updating an agent skill/plugin does not upgrade an existing global npm package. Check the installed and published versions:
-
-```bash
-specset --version 2>/dev/null || true
-npm view @specset/cli version
-```
-
-If `specset` is missing or its version is older than the published version, update it and verify the result:
-
-```bash
-npm install -g @specset/cli@latest
-specset --version
-```
-
-Requires Node.js 20+ with npm. If `npm` itself is missing, stop and ask the user to install Node.js (https://nodejs.org) first. Do not replace a source-linked development CLI when its version is newer than npm.
-
-2. Check authentication with `specset auth status`. If not logged in, choose the login mode based on whether the user can see a browser opened by this environment.
-
-**If a visible browser is unavailable** — including remote or in-app agent sessions, SSH, containers, and CI — use device authentication from the outset:
-
-```bash
-specset login --device
-```
-
-It prints a short code and a link (`https://<host>/device?code=XXXX-XXXX`). Show both to the user and ask them to open the link on any device and approve; the command completes on its own once they do. The code expires after 15 minutes — if it does, run the command again for a fresh one.
-
-When a visible browser is available on the same machine, use the browser flow and tell the user to complete sign-in there while the command waits:
-
-```bash
-specset login
-```
-
-Login is interactive by design — never try to bypass it or handle credentials directly. Don't launch a login mid-task without telling the user what's happening.
-
-3. Pick the active organization (required for org-scoped queries):
-
-```bash
-specset org list
-specset org use <slug>
-```
-
-If the user belongs to exactly one org, select it; otherwise ask which to use.
-
-4. Confirm everything is ready:
-
-```bash
-specset auth status
-```
+1. **Install or update the CLI** (Node.js 20+). Installing a skill/plugin does not upgrade the npm package. If `specset --version` is missing or older than `npm view @specset/cli version`, run `npm install -g @specset/cli@latest` (don't replace a source-linked development CLI whose version is newer than npm). After upgrading, refresh the skills with `specset skill install --target <claude|codex|chatgpt>`.
+2. **Authenticate** — check with `specset auth status`. If not logged in: `specset login` when a visible browser is available on this machine (tell the user to complete sign-in there while the command waits); `specset login --device` otherwise (SSH, containers, CI, remote/in-app sessions). Device login prints a code and a link (`https://<host>/device?code=XXXX-XXXX`) — show both to the user; the command completes once they approve. Codes expire after 15 minutes; rerun for a fresh one.
+3. **Pick the active organization** (required for org-scoped queries): `specset org list`, then `specset org use <slug>`. If the user belongs to exactly one org, select it; otherwise ask which to use.
+4. **Confirm** with `specset auth status`.
 
 Credentials persist across sessions in `~/.config/specset/config.yml` (mode 0600) — setup only needs to happen once per machine.
 
@@ -109,34 +65,17 @@ GQL
 
 ### Schema Discovery
 
-Discover the API shape through introspection queries:
+The domain skills document the operations that matter for each workflow, but they are not exhaustive — when an operation or argument doesn't match, introspect rather than guess:
 
 ```bash
-# Top-level queries
-specset api --query '{ __schema { queryType { fields { name description } } } }'
-
-# Fields on a specific type
 specset api --query '{ __type(name: "Project") { fields { name type { name kind ofType { name } } } } }'
-
-# Input object shape
-specset api --query '{ __type(name: "CreateSubmittalInput") { inputFields { name type { name kind ofType { name } } } } }'
 ```
 
-The domain skills document the operations that matter for each workflow, but they are not exhaustive — when an operation or argument doesn't match, introspect rather than guess.
+The same pattern works for input objects (`inputFields`) and the top-level surface (`{ __schema { queryType { fields { name description } } } }`).
 
 ## Agent Tools and MCP
 
-Beyond raw GraphQL, the CLI exposes Specset's own retrieval tools — semantic and keyword search over specs, drawings, submittals, RFIs, documents (plus closeout and schedule where enabled) — for an AI agent to call directly. Reach for these when you want the actual content to reason over, not just record previews.
-
-- **As commands:** `specset tools list` to see what's available, then `specset tools run <name> --input '{...}'` (or `-F key=value`).
-- **As a native MCP server:** `specset mcp` runs a stdio MCP server that surfaces these tools to an MCP client, reusing your CLI login, org, and host. Register it once:
-
-```bash
-claude mcp add specset -- specset mcp      # Claude Code
-codex mcp add specset -- specset mcp       # Codex
-```
-
-See the `specset-tools` skill for the full workflow — project scoping, the `-F` JSON-parsing difference, and the `sb://` citation convention.
+Beyond raw GraphQL, the CLI exposes Specset's own retrieval tools — semantic and keyword search with actual content to reason over, not just record previews — as direct commands (`specset tools`) and as a native MCP server (`specset mcp`). The `specset-tools` skill owns that workflow: tool listing, project scoping, the `-F` JSON-parsing difference, MCP registration, and the `sb://` citation convention.
 
 ## Uploading Files
 
@@ -187,19 +126,11 @@ specset api --query 'query($id: ID!) {
 
 Processing large PDF sets takes minutes; poll every 15–30 seconds and tell the user what's in flight rather than blocking silently.
 
-## Safety Rules
+## Safety
 
-- Default to read-only queries.
-- Confirm with the user before executing mutations that create, update, or delete data.
-- Never hardcode credentials in commands — the CLI manages tokens via OAuth.
-- Tokens live in `~/.config/specset/config.yml`; do not echo or copy that file's contents.
+Confirm with the user before executing mutations that create, update, or delete data. The domain skills note the mutations with non-obvious consequences.
 
 ## Troubleshooting
 
-- `command not found: specset` — run the First-Run Setup above.
-- `Not logged in` — run `specset login` (opens the user's browser; tell them to complete sign-in there).
-- `No active organization selected` — run `specset org list`, then `specset org use <slug>`.
+- Auth, org, or missing-CLI errors (`command not found`, `Not logged in`, `No active organization selected`, login hangs) — run the matching First-Run Setup step above.
 - A lookup by id returns `null` without an error — the record usually belongs to a different org than the active one; check `specset auth status` and switch with `specset org use <slug>`.
-- Login hangs or the browser can't reach this machine (SSH, container, CI) — use `specset login --device`: it prints a code + link the user approves from any device.
-- `specset --version` is older than `npm view @specset/cli version`, or a documented flag is missing — run `npm install -g @specset/cli@latest`, then verify with `specset --version`.
-- After upgrading the CLI (`npm i -g @specset/cli@latest`), refresh the skills with `specset skill install --target <claude|codex|chatgpt>`.

@@ -6,8 +6,6 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Specset Agent Tools (`specset tools`, `specset mcp`)
 
-Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
-
 These are the same read-only retrieval tools Specset's own in-app agent uses — exposed so external agents can call them directly. Everything here is read-only; nothing needs user confirmation.
 
 ## When to use which surface
@@ -50,7 +48,7 @@ Output is the tool's JSON payload (`{ success, message?, result? }`); a `{ succe
 
 ### Identifiers are citation IDs, not links
 
-Tool results embed identifiers shaped like `sb://spec/<uuid>` or `sb://drawing/<uuid>`. Pass them back into other tools verbatim (e.g. into `getSpecSectionContent`, `getDrawingSheet`). They are **not** web URLs — don't present them to a person as clickable links.
+Tool results embed identifiers shaped like `sb://spec/<uuid>` or `sb://drawing/<uuid>`. Pass them back into other tools verbatim (e.g. into `getSpecSectionContent`, `getDrawingSheet`). They are citation identifiers, not web URLs.
 
 ### Project scoping
 
@@ -60,38 +58,18 @@ Most tools are project-scoped. Either pass `--project` (a UUID or `sb://project/
 
 The retrieval tools return **extracted text**, which is authoritative for schedules, notes, and spec paragraphs — but cannot answer spatial/visual questions (routing, clearances, what a plan view actually shows) and never carries the original file. Every entity has a download command, and **each accepts its `sb://` citation URL verbatim** (as returned by issues, search, and tool results — any `#page=`/`#nodeId=` fragment is ignored) or a bare UUID:
 
-```bash
-# Drawing sheets — image (rendered PNG, default), pdf (single-sheet), file (whole set).
-# Also accepts a sheet number with --project. Read the PNG with vision to inspect geometry.
-specset drawings download 'sb://drawing/<uuid>#nodeId=d1' --out /tmp/sheets/
-specset drawings download E308 --project <projectId> --format pdf
-
-# Project documents — also covers RFI attachments and closeout documents,
-# which all reference a document:
-specset docs download 'sb://doc/<uuid>'
-
-# Spec sections — per-section PDF slice (default) or the whole source spec file.
-# Also accepts a section number with --project:
-specset specs download '23 31 19' --project <projectId>
-specset specs download 'sb://spec/<uuid>' --asset book
-
-# Submittals — compiled package (default when present), cover sheet, or attachments.
-# --list shows the asset inventory first:
-specset submittals download 'sb://sub/<uuid>' --list
-specset submittals download 'sb://sub/<uuid>' --asset attachment --index 2
-specset submittals download 'sb://sub/<uuid>' --asset attachment --all --out ./sub-42/
-
-# RFIs — question + response attachments:
-specset rfis download 'sb://rfi/<uuid>' --list
-specset rfis download 'sb://rfi/<uuid>' --all --out ./rfi-7/
-
-# Raw file resources — the escape hatch when you already hold an sb://file id:
-specset files download 'sb://file/<uuid>'
-```
+| Entity | Command | Also accepts | Formats / options |
+|---|---|---|---|
+| Drawing sheets | `specset drawings download 'sb://drawing/<uuid>'` | sheet number + `--project` | `--format image` (rendered PNG, default), `pdf` (single sheet), `file` (whole set) |
+| Documents | `specset docs download 'sb://doc/<uuid>'` | | also covers RFI attachments and closeout documents |
+| Spec sections | `specset specs download 'sb://spec/<uuid>'` | section number (e.g. `'23 31 19'`) + `--project` | per-section PDF slice (default), `--asset book` (whole source spec file) |
+| Submittals | `specset submittals download 'sb://sub/<uuid>'` | | compiled package (default when present); `--list` shows the asset inventory; `--asset attachment --index 2`, `--asset attachment --all` |
+| RFIs | `specset rfis download 'sb://rfi/<uuid>'` | | question + response attachments; `--list`, `--all` |
+| File resources | `specset files download 'sb://file/<uuid>'` | | escape hatch when you already hold an `sb://file` id |
 
 All commands support `--json` (structured `{files: [{path, bytes, ...}]}` output) and `--out` (file path, or directory for multi-file downloads). A citation passed to the wrong command errors with the right one to use.
 
-Typical loop for drawings: search or `getDrawingSheetContent` to find the sheet → hit a visual question the text can't settle → `drawings download` → **read the PNG with your vision/file-reading tool**.
+Typical loop for drawings: search or `getDrawingSheetContent` to find the sheet → hit a visual question the text can't settle → `drawings download` → read the PNG to inspect the geometry.
 
 ## MCP server (Claude Code, Codex, other MCP clients)
 

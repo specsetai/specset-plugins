@@ -6,9 +6,7 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Closeout & Facilities Data
 
-Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
-
-Run every operation with `specset api`. All ids are plain UUIDs. Remember Variable Limitations in the `specset` skill: `-F` sends strings only — inline every enum, number, boolean, list, and input object as a literal in the operation text, and reserve `-F` for ids and plain strings. This document is not exhaustive — when an operation or argument doesn't match, introspect (see the `specset` skill → Schema Discovery) rather than guess.
+Run every operation with `specset api`. All ids are plain UUIDs. Inline enums, numbers, lists, and input objects in the operation text (`-F` is strings-only; Variable Limitations and Schema Discovery live in the `specset` skill).
 
 ## Entity Model
 
@@ -33,24 +31,6 @@ Real deviations:
 - Batch deletes exist for some entities (`deleteLocations(ids)`, `deleteCompanies(ids)`, `deleteSystems(ids)`, `deleteWarranties(ids)`, `deleteMaintenanceTasks(ids)`) — same confirmation rules as single deletes.
 
 Introspect the input object before composing any create or update, e.g. `{ __type(name: "CreateAssetInput") { inputFields { name type { name kind ofType { name } } } } }`.
-
-Worked example — find, then create:
-
-```bash
-specset api --query 'query($projectId: ID!) {
-  paginatedAssets(projectId: $projectId, search: "AHU", limit: 20, offset: 0) {
-    totalFilteredCount
-    items { id tag status location { id name } product { id name } }
-  }
-}' -F projectId=<project-id>
-
-specset api --query 'mutation($projectId: ID!, $locationId: ID!, $productId: ID!) {
-  createAsset(input: {
-    projectId: $projectId, locationId: $locationId, productId: $productId,
-    tag: "AHU-1", status: Installed, quantity: 1
-  }) { id tag status }
-}' -F projectId=<project-id> -F locationId=<location-id> -F productId=<product-id>
-```
 
 Prefer `update<Entity>` for changes: pass `id` plus only what changes; pass `null` to clear an optional relationship (e.g. `productId: null`). Update inputs for Asset, Location, Product, Company, and System accept `archived: true` — a reversible soft-archive that drops the record from default lists. Prefer it over delete.
 
@@ -109,6 +89,6 @@ The same shape works for duplicate companies, locations, and systems.
 
 ## Safety
 
-- Confirm with the user before every mutation. For deletes, name the exact record (tag/name + id) and get explicit approval — they are hard deletes with no undo.
+- Deletes here are hard deletes with no undo — name the exact record (tag/name + id) when confirming.
 - Prefer `update` over delete-and-recreate, and `archived: true` over delete: deleting a product, location, or company silently nulls the references on assets that pointed at it. Check impact first with the filtered list queries.
 - Removing a document linkage can delete the underlying document if nothing else references it — say so when confirming.

@@ -6,8 +6,6 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Specset Agent Chat
 
-Requires the `specset` CLI, logged in with an active org. If a command fails with `command not found`, `Not logged in`, or `No active organization`, follow First-Run Setup in the `specset` skill.
-
 Specset runs its own project-aware AI agent with full access to a project's specs, drawings, submittals, RFIs, and closeout data. `specset agent chat` sends it a message and waits for the full response — use it for questions that need Specset's own project understanding rather than raw data access.
 
 ## When to Delegate vs. Query Directly

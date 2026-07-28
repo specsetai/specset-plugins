@@ -1,7 +1,7 @@
 {
   "name": "specset",
   "description": "Drive Specset via the specset CLI — search specs and drawings, set up projects, manage submittals, RFIs, and closeout data, chat with project agents, and administer your org. Supports browser and device-code sign-in; installs the CLI on first use.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": {
     "name": "Specset"
   },
