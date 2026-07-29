@@ -4,25 +4,22 @@
 // and intentionally differ from the npm package's own `description`.
 //
 // Usage: PKG_JSON=/path/to/package/package.json node write-manifests.mjs
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync(process.env.PKG_JSON, 'utf8'));
 const description =
   'Drive Specset via the specset CLI — search specs and drawings, set up projects, manage submittals, RFIs, and closeout data, chat with project agents, and administer your org. Supports browser and device-code sign-in; installs the CLI on first use.';
 
-// Native MCP tools. Installing the plugin registers a stdio MCP server that
+// Native MCP tools. Installing either plugin registers a stdio MCP server that
 // exposes Specset's read-only retrieval tools (search over specs, drawings,
 // submittals, RFIs, documents, and more) to the agent directly. It shells out
 // to the globally-installed `specset` CLI (`specset mcp`), which the bundled
-// skills install and authenticate on first use — until then Claude Code simply
-// skips the server, so there is no error if the CLI isn't present yet. Requires
-// @specset/cli >= 0.4.0 (the release that adds the `mcp` subcommand).
+// skills install and authenticate on first use. Requires @specset/cli >= 0.4.0
+// (the release that adds the `mcp` subcommand).
 //
-// Claude Code discovers a plugin's MCP servers from a `.mcp.json` file at the
-// plugin root — an inline `mcpServers` key in plugin.json is NOT read (verified
-// empirically: `claude plugin details` reports 0 servers for the inline form,
-// 1 for the file). Written fresh each run below; it isn't part of the rsync'd
-// skills tree, so it persists across the hourly resync.
+// Claude Code discovers a plugin's MCP servers from `.mcp.json` at the plugin
+// root. The Codex manifest points its `mcpServers` field at that same file.
+// Written fresh each run below so the two plugin formats stay on one transport.
 const mcpServers = {
   specset: {
     command: 'specset',
@@ -42,6 +39,13 @@ patch('plugins/specset/.claude-plugin/plugin.json', (j) => {
   // Note: MCP servers are declared in plugins/specset/.mcp.json, not here.
   delete j.mcpServers;
 });
+
+const codexManifest = 'plugins/specset/.codex-plugin/plugin.json';
+if (existsSync(codexManifest)) {
+  patch(codexManifest, (j) => {
+    j.version = pkg.version;
+  });
+}
 
 writeFileSync(
   'plugins/specset/.mcp.json',

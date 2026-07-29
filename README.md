@@ -13,6 +13,13 @@ The skills are self-bootstrapping: on first use they install or update the [`@sp
 /plugin install specset
 ```
 
+**Codex:**
+
+```bash
+codex plugin marketplace add specsetai/specset-plugins
+codex plugin add specset@specset-plugins
+```
+
 **Any other agent** — tell it to fetch and follow the core skill:
 
 ```
@@ -55,11 +62,15 @@ The skills default to read-only operations and ask before anything that changes 
 
 Installing this plugin also registers a **native MCP server**, giving your agent direct access to Specset's read-only retrieval tools — semantic and keyword search over specs, drawings, submittals, RFIs, and documents (plus closeout and schedule where enabled), and structured reads of their content. This is the middle tier between raw GraphQL and delegating to the in-app agent: use it when you want the actual content to reason over.
 
-The server runs the `specset` CLI (`specset mcp`), so it activates once the CLI is installed and you've signed in — both of which the skills handle on first use. Until then, Claude Code simply skips it (no error). After your first sign-in, restart Claude Code (or run `/reload-plugins`) for the tools to appear.
+The server runs the `specset` CLI (`specset mcp`), so it activates once the CLI is installed and you've signed in — both of which the skills handle on first use. After your first sign-in, start a new Codex task or restart Claude Code (or run `/reload-plugins`) for the tools to appear.
 
 Need a non-default host or a pinned project? Register your own entry instead:
 
 ```bash
+# Codex
+codex mcp add specset -- specset mcp --host <url> --project <id>
+
+# Claude Code
 claude mcp add specset -- specset mcp --host <url> --project <id>
 ```
 
@@ -73,6 +84,13 @@ claude plugin update specset@specset-plugins
 ```
 
 Then run `/reload-plugins` in the active Claude Code session or restart it. Use the matching `--scope` with `claude plugin update` for a project- or local-scope install.
+
+Codex caches Git marketplaces and installed plugins separately too. Refresh the marketplace, reinstall the plugin, and then start a new task:
+
+```bash
+codex plugin marketplace upgrade specset-plugins
+codex plugin add specset@specset-plugins
+```
 
 Updating the plugin does not replace an existing global CLI. Check `specset --version`; if it is older than the plugin, run `npm install -g @specset/cli@latest`. If you installed the skills directly with `specset skill install`, re-run `specset skill install --target claude` after upgrading the CLI.
 

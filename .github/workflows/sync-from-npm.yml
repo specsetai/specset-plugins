@@ -57,6 +57,17 @@ jobs:
           # Mirror the skills tree exactly (also drops skills no longer shipped).
           rsync -a --delete "$PKG/skills/" plugins/specset/skills/
 
+          # Sync the Codex manifest from the universal plugin bundle. Releases
+          # before the bundle was introduced do not contain this directory, so
+          # keep the checked-in manifest until a newer package is published.
+          if [ -d "$PKG/plugin/specset/.codex-plugin" ]; then
+            rsync -a --delete \
+              "$PKG/plugin/specset/.codex-plugin/" \
+              plugins/specset/.codex-plugin/
+          else
+            echo "::notice::@specset/cli@${VERSION} predates the universal plugin bundle; keeping the current Codex manifest."
+          fi
+
           # Bump the plugin + marketplace manifest versions to match the package.
           PKG_JSON="$PKG/package.json" node .github/scripts/write-manifests.mjs
 
