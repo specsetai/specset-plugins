@@ -14,16 +14,16 @@ The `specset` CLI handles OAuth login, org switching, and request signing. The e
 
 This is the core skill — setup and mechanics only. Domain workflows live in sibling skills:
 
-| Skill | Use for |
-|---|---|
-| `specset-search` | Finding anything across specs, drawings, submittals, RFIs, documents, and closeout records |
-| `specset-tools` | Calling Specset's own retrieval tools directly (`specset tools`, `specset mcp`) — deeper than search, lighter than the in-app agent |
-| `specset-projects` | Creating projects, uploading spec/drawing PDFs, publishing spec and drawing sets |
-| `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews |
-| `specset-rfis` | RFI logging, tracking, and responses |
-| `specset-closeout` | Assets, locations, products, companies, warranties, and maintenance |
-| `specset-agent` | Delegating deep project questions to Specset's in-app AI agent |
-| `specset-admin` | Org members, invites, and whitelabel branding |
+| Skill                | Use for                                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `specset-search`     | Finding anything across specs, drawings, submittals, RFIs, documents, and closeout records                                          |
+| `specset-tools`      | Calling Specset's own retrieval tools directly (`specset tools`, `specset mcp`) — deeper than search, lighter than the in-app agent |
+| `specset-projects`   | Creating projects, uploading spec/drawing PDFs, publishing spec and drawing sets                                                    |
+| `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews                                                              |
+| `specset-rfis`       | RFI logging, tracking, and responses                                                                                                |
+| `specset-closeout`   | Assets, locations, products, companies, warranties, and maintenance                                                                 |
+| `specset-agent`      | Delegating deep project questions to Specset's in-app AI agent                                                                      |
+| `specset-admin`      | Org members, invites, and whitelabel branding                                                                                       |
 
 `specset skill install --target <claude|codex|chatgpt>` installs and updates the whole family (`specset skill list` shows what's bundled) — if a skill named above is missing from your skills directory, run it for the current agent.
 
@@ -79,40 +79,16 @@ Beyond raw GraphQL, the CLI exposes Specset's own retrieval tools — semantic a
 
 ## Uploading Files
 
-Several workflows attach an uploaded file — submittal PDFs, RFI attachments, project documents, org logos. Files are uploaded directly to storage via a presigned URL, so attaching one is a three-step flow that needs `bash`, `curl`, and `jq`. The result is a **file id** you pass to whatever mutation consumes it.
-
-1. Request a presigned upload URL:
+Several workflows attach an uploaded file — submittal PDFs, RFI attachments, project documents, and org logos. Use the streaming upload command; it requests a presigned storage URL, sends the file without buffering it whole, finalizes the upload, and returns the **cloud file id** required by attachment mutations:
 
 ```bash
-specset api --query 'mutation($orgId: ID!) {
-  generateFileUploadUrl(orgId: $orgId) { id url fields { key value } }
-}' -F orgId=<your-org-id> > upload.json
+specset files upload ./document.pdf
+specset files upload ./photo.jpg --type image/jpeg --json
 ```
 
-2. POST the file to that URL with the returned form fields — the `file` field must come **last**:
+The active organization is used automatically. With `--json`, read the id from `.id`; without it, the command prints the id. The optional `--type` defaults to `application/octet-stream`.
 
-```bash
-URL=$(jq -r '.data.generateFileUploadUrl.url' upload.json)
-ARGS=()
-while IFS= read -r kv; do ARGS+=(-F "$kv"); done \
-  < <(jq -r '.data.generateFileUploadUrl.fields[] | "\(.key)=\(.value)"' upload.json)
-curl -sf -X POST "${ARGS[@]}" -F "file=@document.pdf" "$URL"
-```
-
-3. Finalize the upload to create the file record and capture its id:
-
-```bash
-UPLOAD_ID=$(jq -r '.data.generateFileUploadUrl.id' upload.json)
-FILE_ID=$(specset api --query 'mutation($orgId: ID!, $id: ID!, $filename: String!) {
-  completeUpload(orgId: $orgId, id: $id, filename: $filename) { id }
-}' -F orgId=<your-org-id> -F id=$UPLOAD_ID -F filename=document.pdf | jq -r '.data.completeUpload.id')
-```
-
-Get your org id first if you don't have it:
-
-```bash
-specset api --query '{ me { orgMembers { org { id slug name } } } }'
-```
+Hosted MCP clients that support OpenAI file parameters receive the equivalent `uploadFile` tool. Pass its returned `.cloudFileId` to domain mutations that accept attachment ids; its `.id` is an `sb://file/...` citation. `getFileDownload` returns an MCP resource link backed by a short-lived URL when the hosted client needs bytes back.
 
 ## Waiting on Background Processing
 
