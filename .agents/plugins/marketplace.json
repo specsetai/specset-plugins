@@ -1,0 +1,20 @@
+{
+  "name": "specset-plugins",
+  "interface": {
+    "displayName": "Specset"
+  },
+  "plugins": [
+    {
+      "name": "specset",
+      "source": {
+        "source": "local",
+        "path": "./plugins/specset"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
