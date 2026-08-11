@@ -35,6 +35,8 @@ specset agent show <threadId>
 
 Use `--json` for machine-readable output (all commands accept it). Long-running questions may need `--timeout <seconds>` — document analysis can take a few minutes.
 
+Agent transcripts expose their source references as clickable `https://app.specbook.ai/go/...` links. Preserve the most relevant returned links as descriptive Markdown citations when relaying the answer to the user. Do not fabricate additional links from UUIDs. An identifier that is not an `https://` link (a thread-local short id or `doc:`-prefixed identifier) is internal — pass it back into commands verbatim, but never present it to the user as a clickable link. Both `--project` and `--thread` accept returned Specset links as well as UUIDs.
+
 Find a project id first if you don't have one:
 
 ```bash

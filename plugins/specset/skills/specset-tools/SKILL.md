@@ -20,7 +20,7 @@ There are three tiers of Specset retrieval. Pick the lightest one that answers t
 
 ```bash
 specset tools list
-specset tools list --project <projectId|sb://project/...>
+specset tools list --project <projectId|https://app.specbook.ai/go/project/...>
 specset tools list --json     # full input schemas
 ```
 
@@ -40,32 +40,33 @@ specset tools run searchSpecSections \
 specset tools run searchSpecSections --project <projectId> \
   -F query="fire rating" -F keywords='["ASTM E119"]' -F limit=5
 
-# Read a specific section's full content using an ID from a search result
-specset tools run getSpecSectionContent -F id='sb://spec/....'
+# Read a specific section's full content using a source link from a search result
+specset tools run getSpecSectionContent \
+  -F id='https://app.specbook.ai/go/spec/<uuid>'
 ```
 
 Output is the tool's JSON payload (`{ success, message?, result? }`); a `{ success: false }` payload exits non-zero.
 
-### Identifiers are citation IDs, not links
+### Source links
 
-Tool results embed identifiers shaped like `sb://spec/<uuid>` or `sb://drawing/<uuid>`. Pass them back into other tools verbatim (e.g. into `getSpecSectionContent`, `getDrawingSheet`). They are citation identifiers, not web URLs.
+Tool results expose clickable links shaped like `https://app.specbook.ai/go/spec/<uuid>` or `https://app.specbook.ai/go/drawing/<uuid>`. Pass them back into other tools verbatim (for example, into `getSpecSectionContent` or `getDrawingSheet`). Include the most relevant returned links as descriptive Markdown citations in user-facing answers. Never invent a link or construct one from an unrelated UUID. An identifier that is not an `https://` link (a thread-local short id or `doc:`-prefixed identifier) is internal — pass it back into tools verbatim, but never present it to the user as a clickable link.
 
 ### Project scoping
 
-Most tools are project-scoped. Either pass `--project` (a UUID or `sb://project/...`), or include `projectId` in the tool input. Use `listProjects` to discover project IDs. With `--project` set, per-call `projectId` becomes optional.
+Most tools are project-scoped. Either pass `--project` (a UUID or returned `/go/project/...` link), or include `projectId` in the tool input. Use `listProjects` to discover projects. With `--project` set, per-call `projectId` becomes optional.
 
 ## Downloading source files (drawings, documents, specs, submittals, RFIs)
 
-The retrieval tools return **extracted text**, which is authoritative for schedules, notes, and spec paragraphs — but cannot answer spatial/visual questions (routing, clearances, what a plan view actually shows) and never carries the original file. Every entity has a download command, and **each accepts its `sb://` citation URL verbatim** (as returned by issues, search, and tool results — any `#page=`/`#nodeId=` fragment is ignored) or a bare UUID:
+The retrieval tools return **extracted text**, which is authoritative for schedules, notes, and spec paragraphs — but cannot answer spatial/visual questions (routing, clearances, what a plan view actually shows) and never carries the original file. Every entity has a download command, and **each accepts its returned Specset `/go` link verbatim** (citation focus parameters are ignored for downloads) or a bare UUID:
 
-| Entity         | Command                                           | Also accepts                                     | Formats / options                                                                                                                       |
-| -------------- | ------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Drawing sheets | `specset drawings download 'sb://drawing/<uuid>'` | sheet number + `--project`                       | `--format image` (rendered PNG, default), `pdf` (single sheet), `file` (whole set)                                                      |
-| Documents      | `specset docs download 'sb://doc/<uuid>'`         |                                                  | also covers RFI attachments and closeout documents                                                                                      |
-| Spec sections  | `specset specs download 'sb://spec/<uuid>'`       | section number (e.g. `'23 31 19'`) + `--project` | per-section PDF slice (default), `--asset book` (whole source spec file)                                                                |
-| Submittals     | `specset submittals download 'sb://sub/<uuid>'`   |                                                  | compiled package (default when present); `--list` shows the asset inventory; `--asset attachment --index 2`, `--asset attachment --all` |
-| RFIs           | `specset rfis download 'sb://rfi/<uuid>'`         |                                                  | question + response attachments; `--list`, `--all`                                                                                      |
-| File resources | `specset files download 'sb://file/<uuid>'`       |                                                  | escape hatch when you already hold an `sb://file` id                                                                                    |
+| Entity         | Command                                                                 | Also accepts                                     | Formats / options                                                                                                                       |
+| -------------- | ----------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Drawing sheets | `specset drawings download 'https://app.specbook.ai/go/drawing/<uuid>'` | sheet number + `--project`                       | `--format image` (rendered PNG, default), `pdf` (single sheet), `file` (whole set)                                                      |
+| Documents      | `specset docs download 'https://app.specbook.ai/go/doc/<uuid>'`         |                                                  | also covers RFI attachments and closeout documents                                                                                      |
+| Spec sections  | `specset specs download 'https://app.specbook.ai/go/spec/<uuid>'`       | section number (e.g. `'23 31 19'`) + `--project` | per-section PDF slice (default), `--asset book` (whole source spec file)                                                                |
+| Submittals     | `specset submittals download 'https://app.specbook.ai/go/sub/<uuid>'`   |                                                  | compiled package (default when present); `--list` shows the asset inventory; `--asset attachment --index 2`, `--asset attachment --all` |
+| RFIs           | `specset rfis download 'https://app.specbook.ai/go/rfi/<uuid>'`         |                                                  | question + response attachments; `--list`, `--all`                                                                                      |
+| File resources | `specset files download 'https://app.specbook.ai/go/file/<uuid>'`       |                                                  | escape hatch for a returned file source link                                                                                            |
 
 All commands support `--json` (structured `{files: [{path, bytes, ...}]}` output) and `--out` (file path, or directory for multi-file downloads). A citation passed to the wrong command errors with the right one to use.
 

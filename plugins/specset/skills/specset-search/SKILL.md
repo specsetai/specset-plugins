@@ -37,7 +37,22 @@ search(
 At least one of `query` or `keywords` is required; they can be combined. Results:
 
 ```graphql
-{ groups { referenceType totalCount items { url title previewText score projectId projectName } } nextOffset }
+{
+  groups {
+    referenceType
+    totalCount
+    items {
+      id
+      url
+      title
+      previewText
+      score
+      projectId
+      projectName
+    }
+  }
+  nextOffset
+}
 ```
 
 ### Project Scope (`ProjectScope`)
@@ -48,7 +63,7 @@ At least one of `query` or `keywords` is required; they can be combined. Results
 
 ### Record Types (`SourceReferenceType`)
 
-Filter with `referenceTypes`. Common values: `SpecSection`, `DrawingSheet`, `Document`, `Submittal`, `SubmittalAttachment`, `Rfi`, and the closeout types `Company`, `Location`, `Product`, `Asset`, `Warranty`, `MaintenanceTask`. Introspect the `SourceReferenceType` enum for the full list.
+Filter semantic `search` with the record types it materializes: `SpecSection`, `DrawingSheet`, `Document`, `Submittal`, and `Rfi`. Other values exist in the shared `SourceReferenceType` enum but are not necessarily supported by this operation.
 
 ## Quick Search: `quickSearch`
 
@@ -66,6 +81,8 @@ quickSearch(
 ```
 
 Results: `{ items { id url number title referenceType score projectId projectName summary } totalCount }`
+
+`quickSearch` also supports explicitly requested closeout title records: `Company`, `Location`, `System`, `Product`, `Asset`, and `MaintenancePlan`. It does not currently return `Warranty`, `Procedure`, or `WorkOrder` rows. `MaintenanceTask` is a deprecated legacy-link redirect, not a searchable record type. Omit `referenceTypes` for the standard global-search defaults, or introspect `SourceReferenceType` and use only a type supported by the selected operation.
 
 ## Precise Lookups
 
@@ -90,15 +107,16 @@ Useful item fields: `id sectionNumber title numberAndTitle` on SpecSection, `id 
 ```bash
 specset api --query 'query($orgId: ID!) {
   search(orgId: $orgId, keywords: ["AHU-1"],
-         referenceTypes: [Submittal, SubmittalAttachment],
+         referenceTypes: [Submittal],
          projectScope: MyProjects, limit: 20) {
     groups { referenceType totalCount
-             items { url title previewText projectName } }
+             items { id url title previewText projectName } }
   }
 }' -F orgId=<org-id>
 ```
 
 ## Working With Results
 
-- Each result's `url` is a Specset reference URL (`sb://spec/<id>`, `sb://sub/<id>`, …); the UUID inside is the record's GraphQL `id` — extract it for follow-up queries. The scheme is documented in the `specset-tools` skill.
+- Each result's `id` is the UUID for follow-up GraphQL calls. Its `url` is the clickable source link (`https://app.specbook.ai/go/spec/<uuid>`, `https://app.specbook.ai/go/sub/<uuid>`, …) and can be passed directly into Specset tools and download commands.
+- In user-facing answers, include the most relevant returned `url` values as descriptive Markdown source links so the user can open the result in Specset. Never synthesize a `/go` link from a UUID that was not returned as a source link.
 - For follow-up work on what you found — updating submittals, answering RFIs, closeout records, or project/document changes — hand off to the `specset-submittals`, `specset-rfis`, `specset-closeout`, or `specset-projects` skill.

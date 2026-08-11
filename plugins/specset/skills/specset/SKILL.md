@@ -40,7 +40,7 @@ Credentials persist across sessions in `~/.config/specset/config.yml` (mode 0600
 
 ## Running GraphQL
 
-Use the `api` subcommand. It accepts the operation via `--query` or stdin, and string variables via `-F key=value` (repeatable). Output is the raw JSON GraphQL response (`{ data, errors }`) — non-zero exit on HTTP errors or `errors[]`.
+Use the `api` subcommand. It accepts the operation via `--query` or stdin, and string variables via `-F key=value` (repeatable). Output preserves the raw JSON GraphQL envelope (`{ data, errors }`) — non-zero exit on HTTP errors or `errors[]`.
 
 ```bash
 # Simple query
@@ -63,6 +63,14 @@ GQL
 
 `-F key=value` only sends **string** values. For non-string args (numbers, booleans, enums, input objects, lists), inline literals directly in the operation rather than parameterizing them. Reserve `-F` for IDs and plain strings.
 
+### IDs and Source Links
+
+- GraphQL fields named `id` are ordinary UUIDs. Use those UUIDs for GraphQL `ID` variables.
+- Citation-bearing fields named `url` and source references embedded in text are emitted as clickable `https://app.specbook.ai/go/<type>/<uuid>` links. The CLI accepts a complete Specset `/go` link in an **`ID`-typed variable** and extracts its UUID automatically (any focus parameters on the link are dropped, with a warning on stderr). Links inlined as literals in the query text, or passed in non-ID variables, are sent to the server verbatim — inline bare UUIDs there instead.
+- `-F` values for non-ID variables are always sent byte-for-byte as typed. Storing a `/go` link in a text field is fine — it is a real URL.
+- Response output rewrites Specset's internal reference representation to public `/go` links by default; `specset api --refs internal` returns the byte-exact server response for low-level debugging and should not be used in user-facing answers.
+- Include relevant returned `/go` links as descriptive Markdown source links in answers so the user can open the exact source in Specset. Cite only links actually returned by Specset; never manufacture one from an unrelated UUID.
+
 ### Schema Discovery
 
 The domain skills document the operations that matter for each workflow, but they are not exhaustive — when an operation or argument doesn't match, introspect rather than guess:
@@ -75,7 +83,7 @@ The same pattern works for input objects (`inputFields`) and the top-level surfa
 
 ## Agent Tools and MCP
 
-Beyond raw GraphQL, the CLI exposes Specset's own retrieval tools — semantic and keyword search with actual content to reason over, not just record previews — as direct commands (`specset tools`) and as a native MCP server (`specset mcp`). The `specset-tools` skill owns that workflow: tool listing, project scoping, the `-F` JSON-parsing difference, MCP registration, and the `sb://` citation convention.
+Beyond raw GraphQL, the CLI exposes Specset's own retrieval tools — semantic and keyword search with actual content to reason over, not just record previews — as direct commands (`specset tools`) and as a native MCP server (`specset mcp`). The `specset-tools` skill owns that workflow: tool listing, project scoping, the `-F` JSON-parsing difference, MCP registration, and clickable Specset source links.
 
 ## Uploading Files
 
@@ -88,7 +96,7 @@ specset files upload ./photo.jpg --type image/jpeg --json
 
 The active organization is used automatically. With `--json`, read the id from `.id`; without it, the command prints the id. The optional `--type` defaults to `application/octet-stream`.
 
-Hosted MCP clients that support OpenAI file parameters receive the equivalent `uploadFile` tool. Pass its returned `.cloudFileId` to domain mutations that accept attachment ids; its `.id` is an `sb://file/...` citation. `getFileDownload` returns an MCP resource link backed by a short-lived URL when the hosted client needs bytes back.
+Hosted MCP clients that support OpenAI file parameters receive the equivalent `uploadFile` tool. Pass its returned `.cloudFileId` to domain mutations that accept attachment ids; its `.id` is a clickable `https://app.specbook.ai/go/file/...` source link. `getFileDownload` returns an MCP resource link backed by a short-lived URL when the hosted client needs bytes back.
 
 ## Waiting on Background Processing
 
