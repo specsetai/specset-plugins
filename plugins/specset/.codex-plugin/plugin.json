@@ -1,6 +1,6 @@
 {
   "name": "specset",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Search and manage Specset construction project data with shared skills and MCP tools.",
   "author": {
     "name": "Specset",
@@ -20,7 +20,7 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Specset",
-    "shortDescription": "Search and manage construction project data",
+    "shortDescription": "Search construction documents",
     "longDescription": "Use Specset skills and MCP tools to search specifications and drawings, inspect project records, manage workflows, and transfer files.",
     "developerName": "Specset",
     "category": "Productivity",
@@ -30,6 +30,7 @@
       "File transfer"
     ],
     "websiteURL": "https://specset.com",
+    "supportURL": "https://specset.com/contact",
     "privacyPolicyURL": "https://specset.com/privacy",
     "termsOfServiceURL": "https://specset.com/terms",
     "defaultPrompt": [
@@ -37,6 +38,8 @@
       "Compare this submittal with the specifications.",
       "Show me the latest RFIs affecting this work."
     ],
-    "brandColor": "#1F6FEB"
+    "brandColor": "#1F6FEB",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
   }
 }

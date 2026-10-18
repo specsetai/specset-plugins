@@ -9,7 +9,7 @@ allowed-tools: Bash Read AskUserQuestion
 How the data is shaped:
 
 - `status` (SubmittalStatus: `Draft | Open | Closed`) is the log lifecycle; `workingStatus` (SubmittalWorkingStatus: `Draft | Submitted | Pending | Approved | ApprovedAsNoted | Rejected | ReviseAndResubmit | ForRecordOnly | Void`) is the ball-in-court state. Set either — the server reconciles the other.
-- Revisions are separate submittal records sharing a `submittalNumber`; list and search queries return only the current revision.
+- Revisions are separate submittal records linked through `parentSubmittal` (the chain, not a shared number, defines a revision); list and search queries return only the current revision.
 - A submittal number is only unique per (spec section, number) within a project — the bare number alone is not.
 
 The sketches below are minimal — inline enums, ints, and lists in the operation text (`-F` is strings-only; Variable Limitations and Schema Discovery live in the `specset` skill).
@@ -39,7 +39,7 @@ Also available:
 
 - `paginatedSubmittals(projectId, search, limit: 25, offset: 0) { totalFilteredCount items { ... } }` — offset pagination with text search.
 - `searchSubmittals(projectId, search)` — lightweight lookup by number or title; use it for dedupe checks.
-- `submittalRevisions(projectId, submittalNumber, specSectionId)` — every revision of one number.
+- `submittalRevisions(id)` — every revision in the given submittal's chain (itself included), highest revision first.
 - `submittalTypes(projectId) { id name label }` — the project's configured types, for `submittalTypeId`.
 
 ## Creating
@@ -65,6 +65,8 @@ specset api --query 'mutation($id: ID!) {
 ```
 
 The revision string auto-increments (`0` → `1`, `A` → `B`); pass `revision` only when the document shows one that doesn't match. `autoReviewMode` works here too.
+
+A submittal created from a PDF that identifies an existing current submittal (same section and number, higher revision or a package that presents itself as a resubmittal) is linked as its next revision automatically. `unlinkSubmittalRevision(id) { id revision isCurrent parentSubmittal { id } }` detaches a wrongly linked row: it becomes a separate submittal with the number from its own document and the previous revision becomes current again.
 
 ## Attachments
 

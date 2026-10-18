@@ -6,7 +6,7 @@ allowed-tools: Bash Read AskUserQuestion
 
 # Specset Agent Tools (`specset tools`, `specset mcp`)
 
-These are the same read-only retrieval tools Specset's own in-app agent uses — exposed so external agents can call them directly. Everything here is read-only; nothing needs user confirmation.
+These are the same read-only retrieval tools Specset's own in-app agent uses — exposed so external agents can call them directly.
 
 ## When to use which surface
 
@@ -22,6 +22,7 @@ There are three tiers of Specset retrieval. Pick the lightest one that answers t
 specset tools list
 specset tools list --project <projectId|https://app.specbook.ai/go/project/...>
 specset tools list --json     # full input schemas
+specset tools list --org <slug>   # catalog for an org other than the active one
 ```
 
 The listing includes usage guidance and marks project-scoped tools. The exact set depends on the org (closeout and schedule tools require their SKUs) and on whether a project is in scope.
@@ -55,6 +56,8 @@ Tool results expose clickable links shaped like `https://app.specbook.ai/go/spec
 
 Most tools are project-scoped. Either pass `--project` (a UUID or returned `/go/project/...` link), or include `projectId` in the tool input. Use `listProjects` to discover projects. With `--project` set, per-call `projectId` becomes optional.
 
+Tools use the selected organization on the chosen host, or infer the sole membership when none is selected. Pass `--org <slug|id>` on `tools list` and `tools run` to pin a different org — required when the project belongs to an org other than the active one (the call otherwise fails with "Project … not found"), and safer in parallel sessions because the active org is shared config.
+
 ## Downloading source files (drawings, documents, specs, submittals, RFIs)
 
 The retrieval tools return **extracted text**, which is authoritative for schedules, notes, and spec paragraphs — but cannot answer spatial/visual questions (routing, clearances, what a plan view actually shows) and never carries the original file. Every entity has a download command, and **each accepts its returned Specset `/go` link verbatim** (citation focus parameters are ignored for downloads) or a bare UUID:
@@ -70,13 +73,48 @@ The retrieval tools return **extracted text**, which is authoritative for schedu
 
 All commands support `--json` (structured `{files: [{path, bytes, ...}]}` output) and `--out` (file path, or directory for multi-file downloads). A citation passed to the wrong command errors with the right one to use.
 
+`drawings download` also accepts `--org <slug|id>` to pin the source organization when parallel sessions might change the active organization, for example `specset drawings download P2.120 --project <id> --org specbook --host <host> --format pdf`.
+
+To inspect an existing detail crop, add `--node <shortId|UUID>`, for example `specset drawings download <sheet-ref> --node d6 --format image --out detail.png`. Use `--format pdf` for the saved crop PDF. This downloads the current revision's stored crop without regenerating it; missing nodes or crops return an error. Node crops do not support `--format file`. JSON output adds the resolved `nodeId` to the normal sheet download metadata.
+
+Its JSON result includes `sheetId` and `revisionId` for the downloaded source. Compare the revision with any previously retrieved content before using that content's coordinates to crop the download.
+
 Typical loop for drawings: search or `getDrawingSheetContent` to find the sheet → hit a visual question the text can't settle → `drawings download` → read the PNG to inspect the geometry.
+
+### Drawn elements: what a drawing view prints, with positions
+
+Before downloading a plan to read a tag or a value off it, check the sheet's **drawn elements**: every printed string on each Drawing node with a 0–1000 box on the node's crop (the ledger), and the tags, runs, connections, cross-references, and printed limits typed from those strings. Each typed element cites ledger rows (`d1a12` = row 12 of node `d1`), so the printed text and its box are always the row's.
+
+```bash
+specset drawings elements show 'https://app.specbook.ai/go/drawing/<uuid>'            # per node: read/typing status, counts, tags, runs, connections, references, limits, keynotes
+specset drawings elements show E6.00 --project <id> --node d1 --grep 800AT             # rows and elements whose text contains 800AT (implies --rows)
+specset drawings elements show E6.00 --project <id> --rows --json                       # every row with kind, box, grid cell, rotation, cloud/revision flags
+```
+
+Read the status line first. A successful ledger read is evidence of printed text; absence claims also need the applicable completeness, recall, revision-cloud and source-coverage gates. Partial reads or unchecked coverage need visual confirmation. A version match alone does not mean a failed extraction succeeded.
+
+Graph tools are automatically available with `--project` for eligible projects (every current drawing sheet uses extraction version 5 or newer; empty projects also qualify). Graphs refresh automatically. To request an immediate rebuild from existing extracted content:
+
+```bash
+specset drawings build-graph --project <id> --wait --timeout 1800 --host <host> --json
+```
+
+Omit `--wait` to return after requesting the build. Waiting confirms a newly persisted graph snapshot, not complete ingestion or review readiness; inspect the returned statistics and `getDrawingGraphOverview` for stale nodes and bundles before reviewing. The server build continues after a timeout, so inspect the overview before requesting another build. This does not reprocess drawings. The command requires the existing `resolveProjectDrawingGraph` and `projectDrawingGraph` server API; it and these instructions ride the next CLI release.
+
+Use `getDrawingGraphOverview` to discover bundle keys, `getCoordinationBundle` for their views, `traverseDrawingReferences` for callout links, and `findDrawingGraphElements` for labeled, schedule-derived assets and rooms. For graphical devices, including unlabeled glyphs, use the candidate symbol lookup when ingestion and a graph rebuild have populated it:
+
+```bash
+specset tools run findDrawingGraphSymbols --project <id> --host <host> \
+  -F canonicalTypes='["LightFixture","Sprinkler"]' -F sheetNumber=A5.01 -F limit=20
+```
+
+It returns source-linked boxes and their supporting legend definitions. You can also filter by `drawingArea`, `nodeId`, or a `scopeKey` returned by `getDrawingGraphOverview`; follow `nextOffset` when `hasMore` is true. These are incomplete candidate observations: zero results do not establish absence, matching types do not link devices across views, and returned counts are not verified physical totals. Confirm an issue-bearing interpretation by downloading and inspecting the source drawing with `specset drawings download <returned-link>`. The in-app visual analysis tool `examineDrawingSheets` is not exposed to external callers.
 
 ## MCP servers (local and hosted)
 
 The same server-side tool registry is available through two transports:
 
-- `specset mcp` is the local stdio transport for Claude Code, Codex, and other clients with shell access. It reuses the CLI login and active organization.
+- `specset mcp` is the local stdio transport for Claude Code, Codex, and other clients with shell access. It reuses the CLI login. Pass `--org <slug|id>` to pin the organization, or use the selected org / sole membership on the chosen host.
 - `https://<specset-host>/mcp` is the stateless Streamable HTTP transport for hosted MCP clients. Its OAuth 2.1 consent flow selects an organization and binds it into the grant, so hosted clients must not put `orgId` in the connection URL. Add `projectId=<project-id>` to pin project scope.
 - First-party clients may instead supply a Specset session bearer token and select the organization with `x-org-id` (or the legacy `orgId` query parameter).
 
@@ -85,8 +123,8 @@ Register the local transport once and the client can call the tools directly:
 ```bash
 # Claude Code
 claude mcp add specset -- specset mcp
-# Optionally pin a project and/or host:
-claude mcp add specset -- specset mcp --project <projectId> --host https://app.specbook.ai
+# Optionally pin organization, project and host:
+claude mcp add specset -- specset mcp --org <slug> --project <projectId> --host https://app.specbook.ai
 
 # Codex
 codex mcp add specset -- specset mcp
@@ -100,6 +138,6 @@ Notes:
 - The hosted transport additionally exposes `uploadFile` (OpenAI host file parameters, streamed into Specset storage) and `getFileDownload` (an MCP resource link backed by a short-lived signed URL). The underlying retrieval tools are still the same allowlisted registry used by stdio.
 - The hosted transport advertises standards-compliant MCP OAuth 2.1 protected-resource and authorization-server metadata. It supports Client ID Metadata Documents, PKCE, resource/audience binding, scoped tools, short-lived access tokens, and rotating refresh tokens.
 
-## Stability
+## Scripting
 
-This surface is experimental — tool names and input schemas may change. For automation you need to keep stable, prefer the typed `search` / `quickSearch` GraphQL queries in the `specset-search` skill.
+Tools are discovered at runtime (`specset tools list`, MCP `tools/list`), and their descriptions and inputs are tuned for agents. For scripts that depend on a fixed response shape, use the typed `search` / `quickSearch` GraphQL queries in the `specset-search` skill.

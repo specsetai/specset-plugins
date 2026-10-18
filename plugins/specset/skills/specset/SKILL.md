@@ -31,12 +31,14 @@ This is the core skill — setup and mechanics only. Domain workflows live in si
 
 Run this when the user installs or updates the skill/plugin, asks to get started with Specset, or when a command fails because the CLI is missing or unauthenticated. Every step is idempotent — skip any that's already satisfied.
 
-1. **Install or update the CLI** (Node.js 20+). Installing a skill/plugin does not upgrade the npm package. If `specset --version` is missing or older than `npm view @specset/cli version`, run `npm install -g @specset/cli@latest` (don't replace a source-linked development CLI whose version is newer than npm). After upgrading, refresh the skills with `specset skill install --target <claude|codex|chatgpt>`.
-2. **Authenticate** — check with `specset auth status`. If not logged in: `specset login` when a visible browser is available on this machine (tell the user to complete sign-in there while the command waits); `specset login --device` otherwise (SSH, containers, CI, remote/in-app sessions). Device login prints a code and a link (`https://<host>/device?code=XXXX-XXXX`) — show both to the user; the command completes once they approve. Codes expire after 15 minutes; rerun for a fresh one.
+1. **Install or update the CLI** (Node.js 22+). Installing a skill/plugin does not upgrade the npm package. If `specset --version` is missing or older than `npm view @specset/cli version`, run `npm install -g @specset/cli@latest` (don't replace a source-linked development CLI whose version is newer than npm). After upgrading, refresh the skills with `specset skill install --target <claude|codex|chatgpt>`.
+2. **Authenticate** — check with `specset auth status`. If not logged in: `specset login` when a visible browser is available on this machine (tell the user to complete sign-in there while the command waits); `specset login --device` otherwise (SSH, containers, CI, remote/in-app sessions). Device login prints a code and a link (`https://<host>/device?code=XXXX-XXXX`) — show both to the user; the command completes once they approve. Codes expire after 15 minutes; rerun for a fresh one. When any command answers `Session invalid`, run `specset login` (or `--device`) for that host again: it replaces the stored session the server no longer accepts. `specset logout` is only for switching accounts.
 3. **Pick the active organization** (required for org-scoped queries): `specset org list`, then `specset org use <slug>`. If the user belongs to exactly one org, select it; otherwise ask which to use.
 4. **Confirm** with `specset auth status`.
 
 Credentials persist across sessions in `~/.config/specset/config.yml` (mode 0600) — setup only needs to happen once per machine.
+
+If `specset auth status` reports an invalid session, run `specset logout`, then sign in again. Pin the same `--host` on both commands when using a development or non-default host; `login` does not replace an existing stored session.
 
 ## Running GraphQL
 
@@ -57,6 +59,14 @@ query {
   me { id email orgMembers { id org { id slug name } } }
 }
 GQL
+```
+
+### Organization scope
+
+Calls run in the active organization (`specset org use <slug>`). Pass `--org <slug|id>` to pin a different org for one call — required when the project belongs to another org, and safer in parallel sessions because the active org is shared config that another session can switch mid-task. `--noOrg` omits the org header entirely for global/superadmin operations; the two flags are mutually exclusive.
+
+```bash
+specset api --org poettker --query '{ paginatedAssets(projectId: "…", limit: 5) { totalFilteredCount } }'
 ```
 
 ### Variable Limitations
@@ -116,5 +126,6 @@ Confirm with the user before executing mutations that create, update, or delete 
 
 ## Troubleshooting
 
+- A server/network failure while selecting the organization (for example HTTP 502) — check the pinned host and server availability, then retry the same command. This does not establish a login-policy failure.
 - Auth, org, or missing-CLI errors (`command not found`, `Not logged in`, `No active organization selected`, login hangs) — run the matching First-Run Setup step above.
 - A lookup by id returns `null` without an error — the record usually belongs to a different org than the active one; check `specset auth status` and switch with `specset org use <slug>`.

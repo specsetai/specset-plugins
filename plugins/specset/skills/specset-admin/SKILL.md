@@ -31,7 +31,7 @@ specset api --query 'query($orgId: ID!, $search: String) {
 
 Manage them (all take the **membership** id from the queries above, not the user id):
 
-- `updateOrgMember(id: ID!, role: ..., projectIds: [ID!])` — `role` is required even when unchanged, so resend the current role when only touching `projectIds`. `projectIds` scopes a Member to specific projects; omit it to leave project access alone.
+- `updateOrgMember(id: ID!, role: ..., projectIds: [ID!], teamIds: [ID!])` — `role` is required even when unchanged, so resend the current role when only touching `projectIds`. `projectIds` scopes a Member to specific projects (the projects they were added to themselves; ones they're on through a team come with the team); `teamIds` replaces their teams. Omit either to leave it alone. Adding or removing a project, or a team's projects, needs management permission in each of those projects.
 - `approveOrgMember(id: ID!)` — activate a `PendingApproval` member.
 - `deactivateOrgMember(id: ID!)` / `reactivateOrgMember(id: ID!)` — suspend and restore access. Deactivation is reversible and preserves history — prefer it over any form of member deletion.
 
@@ -41,17 +41,31 @@ specset api --query 'mutation($id: ID!) {
 }' -F id=<org-member-id>
 ```
 
-## Invites
+## Teams
 
-- `orgInvites(orgId: ID!)` / `paginatedOrgInvites(orgId: ID!, first: Int, after: String)` — pending invites; select `{ id email role inviteUrl }`.
-- `createOrgInvite(orgId: ID!, email: String!, role: ..., projectIds: [ID!])` — sends the invite email; `projectIds` (optional, inline the list) pre-scopes a Member to specific projects. Set `role` deliberately — don't default people to more access than they need. Share the returned `inviteUrl` if the email might not land.
+A team is a named group of members. Assigning a team to a project puts everyone on it on that project, and changes to the team carry over to every project it's on. Teams don't carry a role: people keep their org role unless a project role is set on them.
+
+- `teams(orgId: ID!)` — select `{ id name members { orgMember { user { email } } } projects { project { id name } } canManage }`.
+- `createTeam(orgId: ID!, name: String!, userIds: [ID!], projectIds: [ID!])`, `updateTeam(id: ID!, name: String, userIds: [ID!], projectIds: [ID!])` (lists replace; assignments to archived projects stay), `deleteTeam(id: ID!)`.
+- On a project: `projectTeams(projectId: ID!)`, `addProjectMembers(projectId: ID!, userIds: [ID!], teamIds: [ID!])`, `removeProjectTeam(id: ID!)` (takes the `ProjectTeam` id).
+
+Changing a team needs org Manager or Admin and management permission in every project the team is on or will be on; `canManage` says whether you have it.
+
+## Adding Users and Invites
+
+Nobody joins an org on someone else's say-so. Both paths below leave the person with a pending invitation they must accept — in the app (existing Specset users see an invite badge), by registering through the invite link, or by signing in with the org's SSO. Until then an added user is an `Invited` member: visible in pickers and assignable, but with no access.
+
+- `createOrgMember(orgId: ID!, email: String!, firstName: String!, lastName: String!, role: ..., projectIds: [ID!], teamIds: [ID!], sendInvite: Boolean)` — adds the person as an `Invited` seat right away so they can be assigned work before they've joined. `sendInvite: true` emails the invite link; existing Specset users get the in-app invitation either way. Returns the `OrgMember` (`status: Invited`).
+- `createOrgInvite(orgId: ID!, email: String!, role: ..., projectIds: [ID!])` — invite-only (no seat until they accept; no `teamIds`, so add teams once they have a seat); also used to (re-)invite an existing `Invited` seat. `projectIds` (optional, inline the list) pre-scopes a Member to specific projects. Set `role` deliberately — don't default people to more access than they need. Share the returned `inviteUrl` if the email might not land.
+- `orgInvites(orgId: ID!)` / `paginatedOrgInvites(orgId: ID!, first: Int, after: String)` — pending invites; select `{ id user { email } role inviteUrl }`.
 - `updateOrgInvite(id: ID!, role: ..., projectIds: [ID!])` — `role` is required.
-- `deleteOrgInvite(id: ID!)` — revoke a pending invite.
+- `resendOrgInvite(id: ID!)` — rotates the link and re-sends the email.
+- `deleteOrgInvite(id: ID!)` — revoke a pending invite (an `Invited` seat stays, as "Not invited"; `deleteOrgMember` removes the seat).
 
 ```bash
 specset api --query 'mutation($orgId: ID!, $email: String!) {
-  createOrgInvite(orgId: $orgId, email: $email, role: Member) {
-    id email role inviteUrl
+  createOrgMember(orgId: $orgId, email: $email, firstName: "Alex", lastName: "Rivera", role: Member, sendInvite: true) {
+    id status user { email }
   }
 }' -F orgId=<org-id> -F email=alex@example.com
 ```
