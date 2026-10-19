@@ -26,7 +26,7 @@ project(id: ID!): Project!
 
 `createProject` does **not** add the creator as a project member, so the new project won't appear in the default `projects` list until someone adds them — fetch it by `project(id)`. The `createProject` mutation takes `userIds` and `teamIds` to add members in the same call; `specset projects create` doesn't, so add them as a second step.
 
-1. Create it with the project command. New projects automatically support drawing graphs; no opt-in is required:
+1. Create it with the project command (new projects support drawing graphs automatically):
 
 ```bash
 specset projects create 'Riverside Medical Center' --json

@@ -73,7 +73,7 @@ The retrieval tools return **extracted text**, which is authoritative for schedu
 
 All commands support `--json` (structured `{files: [{path, bytes, ...}]}` output) and `--out` (file path, or directory for multi-file downloads). A citation passed to the wrong command errors with the right one to use.
 
-`drawings download` also accepts `--org <slug|id>` to pin the source organization when parallel sessions might change the active organization, for example `specset drawings download P2.120 --project <id> --org specbook --host <host> --format pdf`.
+`drawings download`, `files download` and `specs download` also accept `--org <slug|id>` to pin the source organization when parallel sessions might change the active organization, for example `specset drawings download P2.120 --project <id> --org <slug> --host <host> --format pdf` or `specset specs download '08 71 00' --project <id> --org <slug> --host <host> --out hardware.pdf`.
 
 To inspect an existing detail crop, add `--node <shortId|UUID>`, for example `specset drawings download <sheet-ref> --node d6 --format image --out detail.png`. Use `--format pdf` for the saved crop PDF. This downloads the current revision's stored crop without regenerating it; missing nodes or crops return an error. Node crops do not support `--format file`. JSON output adds the resolved `nodeId` to the normal sheet download metadata.
 
@@ -99,7 +99,7 @@ Graph tools are automatically available with `--project` for eligible projects (
 specset drawings build-graph --project <id> --wait --timeout 1800 --host <host> --json
 ```
 
-Omit `--wait` to return after requesting the build. Waiting confirms a newly persisted graph snapshot, not complete ingestion or review readiness; inspect the returned statistics and `getDrawingGraphOverview` for stale nodes and bundles before reviewing. The server build continues after a timeout, so inspect the overview before requesting another build. This does not reprocess drawings. The command requires the existing `resolveProjectDrawingGraph` and `projectDrawingGraph` server API; it and these instructions ride the next CLI release.
+Omit `--wait` to return after requesting the build. Waiting confirms a newly persisted graph snapshot, not complete ingestion or review readiness; inspect the returned statistics and `getDrawingGraphOverview` for stale nodes and bundles before reviewing. The server build continues after a timeout, so inspect the overview before requesting another build. This does not reprocess drawings.
 
 Use `getDrawingGraphOverview` to discover bundle keys, `getCoordinationBundle` for their views, `traverseDrawingReferences` for callout links, and `findDrawingGraphElements` for labeled, schedule-derived assets and rooms. For graphical devices, including unlabeled glyphs, use the candidate symbol lookup when ingestion and a graph rebuild have populated it:
 

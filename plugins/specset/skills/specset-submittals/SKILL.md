@@ -14,6 +14,13 @@ How the data is shaped:
 
 The sketches below are minimal — inline enums, ints, and lists in the operation text (`-F` is strings-only; Variable Limitations and Schema Discovery live in the `specset` skill).
 
+Two common flows have purpose-built commands; prefer them to hand-written mutations:
+
+```bash
+specset submittals create --project <projectId> --file ./package.pdf --json   # uploads the file and creates the submittal from it; --title, repeatable --specSection <id>
+specset submittals review --submittal <submittalId|link> --wait --json        # runs a compliance review and prints its issues; repeatable --specSection, --prompt, --timeout (default 3600)
+```
+
 ## Reading
 
 ```bash

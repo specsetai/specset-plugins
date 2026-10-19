@@ -18,8 +18,6 @@ Maintenance has three layers:
 - **MaintenancePlan** — a schedule on exactly one Product, Asset, Location, or System. Product plans fan out to installed assets. Its `tiers` are independent schedule items that pair a Procedure with a calendar cadence, meter trigger, or both.
 - **WorkOrder** — a concrete occurrence or ad-hoc job. Generated work orders snapshot their checklist fields, so history remains stable when a Procedure changes.
 
-`MaintenanceTask` and its completion API no longer exist. Use Procedure, MaintenancePlan, and WorkOrder operations below.
-
 ## Discover Before Mutating
 
 Input objects evolve, especially checklist fields and plan tiers. Introspect the relevant input before composing a mutation:
@@ -315,12 +313,7 @@ specset files download <file-resource-id> --out manual.pdf     # once workflow.s
 
 ## Enabling closeout
 
-`CloseoutAuthService.isCloseoutActive` requires the org SKU **and** (unless the org is in `fmMode`) the project toggle. Both are superadmin operations; `updateOrg(skus)` replaces the whole SKU object, so read the current flags and resend them:
-
-```bash
-specset api --query '{ org(id: "<org-id>") { skus { closeout fmMode dailyLog scheduling estimation agentSessions agentSkills customAgents whitelabel modelRoutingV2 } } }'
-specset api --query 'mutation { updateOrg(id: "<org-id>", skus: { closeout: true, dailyLog: true, scheduling: true }) { id } updateProject(id: "<project-id>", toolSettings: { closeout: true }) { id } }'
-```
+`CloseoutAuthService.isCloseoutActive` requires the org's closeout SKU **and** (unless the org is in `fmMode`) the project's closeout toggle. Specset staff turn both on; when closeout operations report closeout as inactive, ask your Specset contact to enable it.
 
 ## Dedup / Re-pointing
 

@@ -21,6 +21,7 @@ This is the core skill — setup and mechanics only. Domain workflows live in si
 | `specset-projects`   | Creating projects, uploading spec/drawing PDFs, publishing spec and drawing sets                                                    |
 | `specset-submittals` | Submittal lifecycle, attachments, approvers, and AI compliance reviews                                                              |
 | `specset-rfis`       | RFI logging, tracking, and responses                                                                                                |
+| `specset-issues`     | Listing a project's design-review issues and their verification verdicts                                                            |
 | `specset-closeout`   | Assets, locations, products, companies, warranties, and maintenance                                                                 |
 | `specset-agent`      | Delegating deep project questions to Specset's in-app AI agent                                                                      |
 | `specset-admin`      | Org members, invites, and whitelabel branding                                                                                       |
@@ -37,8 +38,6 @@ Run this when the user installs or updates the skill/plugin, asks to get started
 4. **Confirm** with `specset auth status`.
 
 Credentials persist across sessions in `~/.config/specset/config.yml` (mode 0600) — setup only needs to happen once per machine.
-
-If `specset auth status` reports an invalid session, run `specset logout`, then sign in again. Pin the same `--host` on both commands when using a development or non-default host; `login` does not replace an existing stored session.
 
 ## Running GraphQL
 
@@ -118,7 +117,7 @@ specset api --query 'query($id: ID!) {
 }' -F id=<bulk-action-id>
 ```
 
-Processing large PDF sets takes minutes; poll every 15–30 seconds and tell the user what's in flight rather than blocking silently.
+Processing large PDF sets takes minutes; poll every 15–30 seconds and tell the user what's in flight rather than blocking silently. A workflow `status` of `Queued` (documents from an integration sync, an upload of more than 10 files, a portal or a reprocess) means it is waiting its turn for background processing: count it as in progress, like `NotStarted` and `Running`.
 
 ## Safety
 
