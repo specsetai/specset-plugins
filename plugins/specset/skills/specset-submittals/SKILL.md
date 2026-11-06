@@ -18,7 +18,7 @@ Two common flows have purpose-built commands; prefer them to hand-written mutati
 
 ```bash
 specset submittals create --project <projectId> --file ./package.pdf --json   # uploads the file and creates the submittal from it; --title, repeatable --specSection <id>
-specset submittals review --submittal <submittalId|link> --wait --json        # runs a compliance review and prints its issues; repeatable --specSection, --prompt, --timeout (default 3600)
+specset submittals review --submittal <submittalId|link> --wait --json        # runs a compliance review and prints its issues; exits non-zero when it times out or the review fails; repeatable --specSection, --prompt, --timeout (default 3600)
 ```
 
 ## Reading

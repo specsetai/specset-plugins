@@ -12,15 +12,15 @@ Every operation here takes your org id — get it with `{ me { orgMembers { org 
 
 Roles (`OrgMemberTeamRole`): `Member`, `Manager`, `Admin`. Statuses (`OrgMemberStatus`): `PendingApproval`, `Active`, `Deactivated`. You need to be an org Admin for most mutations in this skill.
 
-List members — filtered flat list or paginated search:
+List active members — `--role` narrows to some roles, `--json` adds each membership `id` the mutations below take:
 
 ```bash
-specset api --query 'query($orgId: ID!) {
-  orgMembers(orgId: $orgId, statuses: [Active]) {
-    id role status user { id email firstName lastName }
-  }
-}' -F orgId=<org-id>
+specset org members list --role Admin,Manager --json
+```
 
+Search members through the API (`orgMembers(orgId:, statuses: [...])` lists members in other statuses):
+
+```bash
 specset api --query 'query($orgId: ID!, $search: String) {
   paginatedOrgMembers(orgId: $orgId, search: $search, first: 20) {
     edges { node { id role status user { email } } }
@@ -41,6 +41,10 @@ specset api --query 'mutation($id: ID!) {
 }' -F id=<org-member-id>
 ```
 
+## Security Settings
+
+`specset org security show` lists the organization's seven security settings (single sign-on, authentication requirement, passwords, passkeys, authenticator codes, onboarding policy, session length) beside the values the Secure Configuration Guide (https://docs.specset.com/docs/secure-configuration) recommends for an organization that holds federal information or CUI, each marked `matches`, `stricter` or `differs`, with the identity providers. `--json` exports the same. Any member can read them; only an Admin changes them, in the web app under **Security & SSO** (the CLI cannot). A `differs` can be deliberate, such as single sign-on required with the provider's MFA confirmed by Specset support.
+
 ## Teams
 
 A team is a named group of members. Assigning a team to a project puts everyone on it on that project, and changes to the team carry over to every project it's on. Teams don't carry a role: people keep their org role unless a project role is set on them.
@@ -56,8 +60,9 @@ Changing a team needs org Manager or Admin and management permission in every pr
 Nobody joins an org on someone else's say-so. Both paths below leave the person with a pending invitation they must accept — in the app (existing Specset users see an invite badge), by registering through the invite link, or by signing in with the org's SSO. Until then an added user is an `Invited` member: visible in pickers and assignable, but with no access.
 
 - `createOrgMember(orgId: ID!, email: String!, firstName: String!, lastName: String!, role: ..., projectIds: [ID!], teamIds: [ID!], sendInvite: Boolean)` — adds the person as an `Invited` seat right away so they can be assigned work before they've joined. `sendInvite: true` emails the invite link; existing Specset users get the in-app invitation either way. Returns the `OrgMember` (`status: Invited`).
+- Directory contacts are people the org tracks and assigns (a subcontractor's PM, a received-from on a submittal) who don't sign in: `createOrgMember(..., memberType: DirectoryOnly)` adds one with no invite and no access. Every member and contact can carry `companyId` (a directory company; staff default to the org's own), `jobTitle`, `phone`, `mobilePhone`, and `notes`, on create and on `updateOrgMember`. `updateOrgMember(id, role: ..., memberType: Regular, sendInvite: true)` turns a contact into an invited member. `orgMembers(orgId, companyIds: [...])` lists a company's people.
 - `createOrgInvite(orgId: ID!, email: String!, role: ..., projectIds: [ID!])` — invite-only (no seat until they accept; no `teamIds`, so add teams once they have a seat); also used to (re-)invite an existing `Invited` seat. `projectIds` (optional, inline the list) pre-scopes a Member to specific projects. Set `role` deliberately — don't default people to more access than they need. Share the returned `inviteUrl` if the email might not land.
-- `orgInvites(orgId: ID!)` / `paginatedOrgInvites(orgId: ID!, first: Int, after: String)` — pending invites; select `{ id user { email } role inviteUrl }`.
+- `orgInvites(orgId: ID!)` / `paginatedOrgInvites(orgId: ID!, first: Int, after: String)` — pending invites; select `{ id user { email } role inviteUrl }`. `inviteUrl` is null unless you may re-send that invitation (a Manager or Admin, up to your own role): whoever holds the link can register as the invitee.
 - `updateOrgInvite(id: ID!, role: ..., projectIds: [ID!])` — `role` is required.
 - `resendOrgInvite(id: ID!)` — rotates the link and re-sends the email.
 - `deleteOrgInvite(id: ID!)` — revoke a pending invite (an `Invited` seat stays, as "Not invited"; `deleteOrgMember` removes the seat).

@@ -12,6 +12,8 @@ Run every operation with `specset api`. All ids are plain UUIDs. Inline enums, n
 
 **Locations** are the spatial scaffold (site → building → level → room), nesting through `parentId`. **Systems** are disciplines and equipment groups, also nested. **Products** are specified make/models. **Assets** are installed instances: each asset has a location, may reference a product and responsible company, and can join multiple systems. **Warranties** attach to assets.
 
+**Companies** belong to the organization's directory and are shared by its projects. A company works on a project through a **ProjectCompany** row, which holds that project's `role`, `notes`, `archived` state and closeout documentation. Assigning a directory company to a project record (an asset's responsible company, a part's vendor, a submittal's or RFI's responsible contractor) adds it to the project.
+
 Maintenance has three layers:
 
 - **Procedure** — reusable checklist content: ordered typed fields, descriptions, and source references.
@@ -53,6 +55,7 @@ Notable differences:
 
 - Asset creation requires `projectId` and `locationId`. `paginatedAssets` accepts `search` and filters such as `statuses`, `locationIds`, `productIds`, `systemIds`, `responsibleCompanyIds`, `parentIds`, and `archived`.
 - Warranty is asset-scoped; use `warrantiesByAsset(assetId)` to browse one asset's warranties.
+- Company is org-wide: `paginatedCompanies(orgId: ...)` lists the directory and `searchCompanies(orgId, search)` finds a company by name. `paginatedProjectCompanies(projectId)` lists a project's companies with their `role`; `addCompaniesToProject(projectId, companyIds)`, `removeCompaniesFromProject(projectId, companyIds)` (refused while a project record still names the company) and `updateProjectCompany(input: { id, role, notes, archived })` manage the participation. `createCompany(input: { projectId, ... })` creates the directory company and puts it on that project.
 - Location, Product, Company, System, and Asset updates support reversible `archived` state. Prefer archiving to deletion.
 - Batch-delete availability varies. Introspect the mutation root rather than guessing an operation name.
 
@@ -175,7 +178,7 @@ specset api --query 'mutation { setProductDocumentRoles(productId: "<product-id>
 
 Existing project Documents work too — a submittal attachment's `document { id }` (from `paginatedSubmittals … attachments { document { id title } }`) can be linked directly as `SubmittalPackage`/`Datasheet`; the only check is that the Document belongs to the same project. To bind a slice of a large file, `extractPagesFromFileResource(id: <fileResourceId>, pages: [3, 4, 5])` returns a new CloudFile to feed into `createDocumentsFromCloudFiles`. Only PDF files merge into the O&M package export; images and other types are listed as references.
 
-Asset, Location, Product, Company, and System also have markdown documentation blocks. `update<Entity>Documentation(id, markdown)` replaces the block; `mark<Entity>DocumentationComplete(id)` attests that it is current. Any later create/update/link on the entity (a new document pivot, a warranty document, a field edit) marks the documentation stale again, so when seeding a graph write documentation **last**. Calling `mark<Entity>DocumentationComplete` with an empty block sets the state to `NotApplicable`, which the package readiness report accepts — use it for entities that don't warrant prose rather than writing filler.
+Asset, Location, Product, Company, and System also have markdown documentation blocks. `update<Entity>Documentation(id, markdown)` replaces the block; `mark<Entity>DocumentationComplete(id)` attests that it is current. A company's block is per project: use `updateProjectCompanyDocumentation` / `markProjectCompanyDocumentationComplete` with the ProjectCompany id. Any later create/update/link on the entity (a new document pivot, a warranty document, a field edit) marks the documentation stale again, so when seeding a graph write documentation **last**. Calling `mark<Entity>DocumentationComplete` with an empty block sets the state to `NotApplicable`, which the package readiness report accepts — use it for entities that don't warrant prose rather than writing filler.
 
 ### Writing documentation that reads well in the O&M package export
 
@@ -324,7 +327,7 @@ For duplicate products P1 (loser) and P2 (survivor):
 3. Re-run the filtered query and confirm zero remaining references.
 4. Archive P1 with `updateProduct(input: { id: P1, archived: true })`.
 
-Use the same impact-first pattern for duplicate companies, locations, and systems.
+Use the same impact-first pattern for duplicate locations and systems. Duplicate companies merge in one step: `mergeCompanies(targetId, sourceIds)` moves their projects, documents, record assignments, people and Procore links to the target, fills the target's blank profile fields from theirs (in `sourceIds` order), and archives the duplicates; it is not reversible, so confirm the pair first. `companyDuplicates(orgId)` lists likely pairs (names that differ only in case, punctuation or a legal form), and `companies(ids)` loads them side by side.
 
 ## Safety
 
