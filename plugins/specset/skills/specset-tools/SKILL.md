@@ -58,6 +58,16 @@ Most tools are project-scoped. Either pass `--project` (a UUID or returned `/go/
 
 Tools use the selected organization on the chosen host, or infer the sole membership when none is selected. Pass `--org <slug|id>` on `tools list` and `tools run` to pin a different org — required when the project belongs to an org other than the active one (the call otherwise fails with "Project … not found"), and safer in parallel sessions because the active org is shared config.
 
+### Inside Specset's code sandbox
+
+When a Specset agent runs a script in its code sandbox, `specset tools list` and `specset tools run` work there with no login, host or org to choose:
+
+```bash
+specset tools run listSubmittals -F limit=50 > inputs/submittals.json
+```
+
+The sandbox has no network and no token. The command leaves each request in a mailbox the server reads, and the server answers as the person the conversation belongs to, in the conversation's organization and project. So leave out `--org` and `--project` (another organization or project is refused), and `--host` is ignored. Results carry Specset IDs (`sb://…`) in place of `/go/` links; pass them back into tools as they are. Only `specset tools` exists there, and a command may make 100 tool calls.
+
 ## Downloading source files (drawings, documents, specs, submittals, RFIs)
 
 The retrieval tools return **extracted text**, which is authoritative for schedules, notes, and spec paragraphs — but cannot answer spatial/visual questions (routing, clearances, what a plan view actually shows) and never carries the original file. Every entity has a download command, and **each accepts its returned Specset `/go` link verbatim** (citation focus parameters are ignored for downloads) or a bare UUID:
@@ -114,7 +124,8 @@ It returns source-linked boxes and their supporting legend definitions. You can 
 
 The same server-side tool registry is available through two transports:
 
-- `specset mcp` is the local stdio transport for Claude Code, Codex, and other clients with shell access. It reuses the CLI login. Pass `--org <slug|id>` to pin the organization, or use the selected org / sole membership on the chosen host.
+- The Specset plugin for Claude and Codex registers the hosted transport below (`https://app.specset.com/mcp`); its tools appear only after the client signs in through the server's OAuth flow, separately from `specset login`. If they're missing in Claude Code, tell the user to run `/mcp`, choose `specset`, and authenticate. Before a CLI command that takes a project from those tools (such as `projects add-docs`), make sure the CLI is in the same organization the connection chose, or pass `--org`.
+- `specset mcp` is the local stdio transport for clients you register by hand, including Claude Code and Codex without the plugin. It reuses the CLI login. Pass `--org <slug|id>` to pin the organization, or use the selected org / sole membership on the chosen host.
 - `https://<specset-host>/mcp` is the stateless Streamable HTTP transport for hosted MCP clients. Its OAuth 2.1 consent flow selects an organization and binds it into the grant, so hosted clients must not put `orgId` in the connection URL. Add `projectId=<project-id>` to pin project scope.
 - First-party clients may instead supply a Specset session bearer token and select the organization with `x-org-id` (or the legacy `orgId` query parameter).
 

@@ -46,7 +46,7 @@ specset api --query 'mutation($id: ID!) {
 
 ## Security Settings
 
-`specset org security show` lists the organization's seven security settings (single sign-on, authentication requirement, passwords, passkeys, authenticator codes, onboarding policy, session length) beside the values the Secure Configuration Guide (https://docs.specset.com/docs/secure-configuration) recommends for an organization that holds federal information or CUI, each marked `matches`, `stricter` or `differs`, with the identity providers. `--json` exports the same. Any member can read them; only an Admin changes them, in the web app under **Security & SSO** (the CLI cannot). A `differs` can be deliberate, such as single sign-on required with the provider's MFA confirmed by Specset support.
+`specset org security show` lists the organization's eight security settings (single sign-on, authentication requirement, passwords, passkeys, authenticator codes, onboarding policy, session length, AI assistant connections) beside the values the Secure Configuration Guide (https://docs.specset.com/docs/secure-configuration) recommends for an organization that holds federal information or CUI, each marked `matches`, `stricter` or `differs`, with the identity providers. `--json` exports the same. Any member can read them; only an Admin changes them, in the web app under **Security & SSO** (the CLI cannot). A `differs` can be deliberate, such as single sign-on required with the provider's MFA confirmed by Specset support.
 
 ## Teams
 

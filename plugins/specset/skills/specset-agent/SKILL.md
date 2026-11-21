@@ -144,7 +144,7 @@ specset agent show <threadId>          # progress, transcript, findings so far
 Install the Codex runtime once (Node.js 22 or newer); Claude uses the runtime bundled with the CLI:
 
 ```bash
-specset harness install codex      # pins the native Codex runtime under ~/.specset/harness
+specset harness install codex      # pins the native Codex runtime under ~/.specset/harness; rerun after a CLI upgrade when `agent serve` says it drifted
 specset harness list               # what is installed, and which harness launched this shell
 ```
 
