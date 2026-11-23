@@ -60,11 +60,11 @@ The skills default to read-only operations and ask before anything that changes 
 
 ## Native tools (MCP)
 
-Installing this plugin also registers a **native MCP server**, giving your agent direct access to Specset's read-only retrieval tools — semantic and keyword search over specs, drawings, submittals, RFIs, and documents (plus closeout and schedule where enabled), and structured reads of their content. This is the middle tier between raw GraphQL and delegating to the in-app agent: use it when you want the actual content to reason over.
+Installing this plugin also connects Specset's **hosted MCP server** (`https://app.specset.com/mcp`), giving your agent direct access to Specset's read-only retrieval tools — semantic and keyword search over specs, drawings, submittals, RFIs, and documents (plus closeout and schedule where enabled), and structured reads of their content. This is the middle tier between raw GraphQL and delegating to the in-app agent: use it when you want the actual content to reason over.
 
-The server runs the `specset` CLI (`specset mcp`), so it activates once the CLI is installed and you've signed in — both of which the skills handle on first use. After your first sign-in, start a new Codex task or restart Claude Code (or run `/reload-plugins`) for the tools to appear.
+The first time your agent connects it, a Specset sign-in page opens in your browser; choose the organization the connection may use, and the grant covers only that organization. This sign-in is separate from the CLI's, which the skills still use for local file transfers and record changes.
 
-Need a non-default host or a pinned project? Register your own entry instead:
+Need a non-default host or a pinned project, or prefer the CLI's own login? Register the CLI's local server (`specset mcp`) instead:
 
 ```bash
 # Codex
@@ -94,7 +94,7 @@ codex plugin add specset@specset-plugins
 
 Updating the plugin does not replace an existing global CLI. Check `specset --version`; if it is older than the plugin, run `npm install -g @specset/cli@latest`. If you installed the skills directly with `specset skill install`, re-run `specset skill install --target claude` after upgrading the CLI.
 
-> **This repository is generated — do not hand-edit `plugins/specset/**`.** The skills are the source that ships inside `@specset/cli` (`apps/cli/skills/*` in the CLI source repo). A scheduled workflow ([`.github/workflows/sync-from-npm.yml`](.github/workflows/sync-from-npm.yml)) pulls the latest published npm package and regenerates the mirror, so a new CLI release appears here within the hour. To change a skill, edit it in the CLI source repo and cut a release.
+> **This repository is generated — do not hand-edit `plugins/specset/**`.** The plugin bundle ships inside `@specset/cli` (`apps/cli/skills/*` and `apps/cli/plugin/specset/*` in the CLI source repo). A scheduled workflow ([`.github/workflows/sync-from-npm.yml`](.github/workflows/sync-from-npm.yml)) pulls the latest published npm package and regenerates the mirror, so a new CLI release appears here within the hour. To change a skill, a manifest, the MCP config, the plugin README or its assets, edit it in the CLI source repo and cut a release.
 
 ## Support
 

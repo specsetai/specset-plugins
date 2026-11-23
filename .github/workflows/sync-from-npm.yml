@@ -3,7 +3,9 @@ name: Sync skills from npm
 # This repository is a GENERATED mirror of the skills bundled with @specset/cli.
 # Do NOT hand-edit plugins/specset/** — this workflow pulls the latest published
 # package from npm and regenerates the mirror. To change a skill, edit
-# apps/cli/skills/* in the CLI source repo and cut a new @specset/cli release.
+# apps/cli/skills/* in the CLI source repo; to change the manifests, MCP config,
+# README or assets, edit apps/cli/plugin/specset/*; then cut a new @specset/cli
+# release.
 #
 # Pull-based by design: the mirror updates itself from the published npm artifact
 # using the built-in GITHUB_TOKEN, so no cross-repo write credential is stored
@@ -54,21 +56,19 @@ jobs:
           ( cd "$WORK" && npm pack "@specset/cli@${VERSION}" >/dev/null && tar -xzf ./*.tgz )
           PKG="$WORK/package"
 
-          # Mirror the skills tree exactly (also drops skills no longer shipped).
-          rsync -a --delete "$PKG/skills/" plugins/specset/skills/
-
-          # Sync the Codex manifest from the universal plugin bundle. Releases
-          # before the bundle was introduced do not contain this directory, so
-          # keep the checked-in manifest until a newer package is published.
-          if [ -d "$PKG/plugin/specset/.codex-plugin" ]; then
-            rsync -a --delete \
-              "$PKG/plugin/specset/.codex-plugin/" \
-              plugins/specset/.codex-plugin/
+          # The package's universal plugin bundle is the source of truth for the
+          # whole plugin folder: both manifests, .mcp.json, the README, assets,
+          # and the skills. Mirror it exactly (also drops files no longer
+          # shipped). Releases before the bundle was introduced only carry the
+          # skills tree, so mirror just that for them.
+          if [ -d "$PKG/plugin/specset" ]; then
+            rsync -a --delete "$PKG/plugin/specset/" plugins/specset/
           else
-            echo "::notice::@specset/cli@${VERSION} predates the universal plugin bundle; keeping the current Codex manifest."
+            echo "::notice::@specset/cli@${VERSION} predates the universal plugin bundle; syncing skills only."
+            rsync -a --delete "$PKG/skills/" plugins/specset/skills/
           fi
 
-          # Bump the plugin + marketplace manifest versions to match the package.
+          # Apply the curated marketplace description and match versions.
           PKG_JSON="$PKG/package.json" node .github/scripts/write-manifests.mjs
 
       - name: Commit if the mirror changed
